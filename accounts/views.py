@@ -7,62 +7,63 @@ from django.db.models import Q
 
 from . import forms, models
 
+from allauth.account.models import EmailAddress
+from django.contrib.auth import logout
+from django.contrib import messages
+from allauth.account.utils import send_email_confirmation
+
 # Create your views here.
 
 class CustomLoginView(LoginView):
     template_name = 'account/login.html'
-    form_class = forms.MyLoginForm  # カスタムフォームを指定
+    form_class = forms.MyLoginForm  # Specify your custom form
 
     def get(self, request, *args, **kwargs):
-        print("CustomLoginView GET method called")  # デバッグ用のプリント文
+        print("CustomLoginView GET method called")  # Debugging print
         return super().get(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        print("CustomLoginView POST method called")  # デバッグ用のプリント文
+        print("CustomLoginView POST method called")  # Debugging print
         return super().post(request, *args, **kwargs)
 
     def form_valid(self, form):
-        print("Form is valid")  # デバッグ用のプリント文
+        print("Form is valid")  # Debugging print
         user = form.get_user()
-        print(f'User: {user}')  # デバッグ用のプリント文
+        print(f'User: {user}')  # Debugging print
+
+        # Check if the user's email is verified
+        email_address = EmailAddress.objects.filter(user=user).first()
+        if email_address and not email_address.verified:
+            # Resend email verification link
+            send_email_confirmation(self.request, user)
+            # Log out the user and display a message
+            logout(self.request)
+            messages.error(
+                self.request,
+                "Your email is not verified. A new verification link has been sent to your email address."
+            )
+            return redirect('account_email_verification_sent')  # Adjust this to your verification page URL name
+
+        # Proceed with login if the email is verified
         backend = 'allauth.account.auth_backends.AuthenticationBackend'
-        if user is not None:
-            login(self.request, user, backend=backend)
-            return super().form_valid(form)
-        else:
-            print("User is not authenticated")  # デバッグ用のプリント文
-            return self.form_invalid(form)
+        login(self.request, user, backend=backend)
+        return super().form_valid(form)
 
     def form_invalid(self, form):
-        print("Form is invalid")  # デバッグ用のプリント文
-        print(form.errors)  # フォームのエラーを表示
+        print("Form is invalid")  # Debugging print
+        print(form.errors)  # Debugging print
         return super().form_invalid(form)
 
     def get_success_url(self):
-        print("フラグです")  # デバッグ用のプリント文
+        print("Determining success URL")  # Debugging print
         user = self.request.user
         if user.is_authenticated:
             if user.account_type == 2:  # Shop owner
-                return reverse_lazy('restaurant_list_2', kwargs={'pk': user.pk})  # Redirect to shop owner's page
+                return reverse_lazy('restaurant_list_2', kwargs={'pk': user.pk})  # Redirect shop owner
             else:
-                return reverse_lazy('top_page')  # Redirect normal user to top page
+                return reverse_lazy('top_page')  # Redirect normal user
         return super().get_success_url()
-
-
-# class CustomLoginView(LoginView):
-#   template_name = 'account/login.html'
-#   form_class = forms.MyLoginForm
-  
-#   def get_success_url(self):
-#     print(f'フラグです')
-#     user = self.request.user
-#     if user.is_authenticated:
-#       if user.account_type == 2:  # Shop owner
-#         return reverse_lazy('restaurant_list_2')  # Redirect to shop owner's page
-#       else:
-#         return reverse_lazy('top_page')  # Redirect normal user to top page
-#     return super().get_success_url()
-
+    
 class UserDetailView(generic.DetailView):
   model = models.CustomUser
   template_name = 'user/user_detail.html'
