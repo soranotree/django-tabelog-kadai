@@ -1,0 +1,23 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+<main>
+
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12">
+      {% comment %} <div class="col-xxl-6 col-xl-7 col-lg-8 col-md-10"> {% endcomment %}
+        <h1 class="mb-3 text-center">ユーザー情報の削除</h1>
+        <p>本当にこのユーザーを削除しますか？ この操作は元に戻せません。</p>
+        <form method="post">
+          {% csrf_token %}
+          <button class="btn btn-danger" type="submit">削除</button>
+          <a href="{% url 'user_list_3' %}" class="btn btn-secondary">キャンセル</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

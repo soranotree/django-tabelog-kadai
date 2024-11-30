@@ -1,0 +1,120 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+{% comment %} {% load humanize %} {% endcomment %}
+<main>
+
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12">
+      {% comment %} <div class="col-xxl-6 col-xl-7 col-lg-8 col-md-10"> {% endcomment %}
+        <br>
+        <h1 class="mb-3 text-center">ユーザー管理</h1>
+
+        <form method="get" action="{% url 'user_list_3' %}">
+          <div class="input-group mb-3 search-ul3">
+            <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="キーワードで検索" aria-label="キーワードで検索">
+            <input type="hidden" name="ordering" value="{{ current_ordering }}">
+            <button class="btn btn-outline-secondary" type="submit">検索</button>
+          </div>
+        </form>
+        
+        <table class="table">
+          <thead>
+            <tr class="col-ul3-user">
+              <th scope="col">
+                <a href="?{% if current_ordering == 'id' %}ordering=-id{% else %}ordering=id{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  ユーザーID
+                </a>
+                ＆ユーザー名
+              </th>
+              <th scope="col" class="col-ul3-email">
+                <a href="?{% if current_ordering == 'email' %}ordering=-email{% else %}ordering=email{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  メールアドレス
+                </a>
+              </th>
+              <th scope="col" class="col-ul3-type">
+                <a href="?{% if current_ordering == 'account_type' %}ordering=-account_type{% else %}ordering=account_type{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  アカウント種別
+                </a>
+              </th>
+              <th scope="col" class="col-ul3-subscription">
+                <a href="?{% if current_ordering == 'is_subscribed' %}ordering=-is_subscribed{% else %}ordering=is_subscribed{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  サブスク状況
+                </a>
+              </th>
+              <th scope="col" class="col-ul3-action">
+                アクション
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in object_list %}
+            <tr>
+              <td class="col-ul3-user">
+                ID：{{ user.id }}
+                <br>
+                {{ user.user_name }}
+              </td>
+              <td class="col-ul3-email">
+                {{ user.email }}
+              </td>
+              <td class="col-ul3-type">
+                {% if user.account_type == 1 %}一般ユーザー
+                {% elif user.account_type == 2 %}店舗オーナー
+                {% elif user.account_type == 3 %}システム管理者
+                {% endif %}
+              </td>
+              <td class="col-ul3-subscription">
+                {% if user.is_subscribed == True %}登録中
+                {% else %}未
+                {% endif %}
+              </td>
+              <td class="col-ul3-action">
+                <button class="btn btn-secondary" onclick="location.href='{% url 'user_update' pk=user.pk %}'" style="margin: 5px 0;">編集</button>
+                <button class="btn btn-danger" onclick="if(confirm('本当に削除しますか？')) { location.href='{% url 'user_delete' pk=user.pk %}'; }" style="margin: 5px 0;">削除</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        {% if is_paginated %}
+        <div class="d-flex justify-content-center">
+          <nav>
+            <ul class="pagination">
+              <!-- 前ページへのリンク-->
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&ordering={{ current_ordering }}{% if search_query %}&q={{ search_query }}{% endif %}" rel="prev" aria-label="&laquo; 前">&lsaquo;</a>
+              </li>
+              {% endif %}
+        
+              <!-- ページ数表示-->
+              {% for page_num in page_obj.paginator.page_range %}
+              {% if page_obj.number == page_num %}
+              <li class="page-item active" aria-current="page"><span class="page-link">{{ page_num }}</span></li>
+              {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_num }}&ordering={{ current_ordering }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ page_num }}</a>
+              </li>
+              {% endif %}
+              {% endfor %}
+        
+              <!-- 次ページへのリンク-->
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&ordering={{ current_ordering }}{% if search_query %}&q={{ search_query }}{% endif %}" rel="next" aria-label="次 &raquo;">&rsaquo;</a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

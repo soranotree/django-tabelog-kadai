@@ -1,0 +1,49 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block title %}nagoyameshi{% endblock %}
+{% block content %}
+<main>
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      {% comment %} <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12"> {% endcomment %}
+      <div class="col-xxl-6 col-xl-7 col-lg-8 col-md-10">
+        <br><br>
+        <h1 class="mb-3 text-center">レビューの返信</h1>
+        <h2 class="mb-3 text-center">【{{ restaurant.shop_name }}】</h2>
+        <a href="{% url 'review_list_2' restaurant.id %}">戻る</a>
+        <br><br>
+        <style>
+          .comment-box {
+              border: 1px solid #ccc;
+              padding: 15px;
+              border-radius: 5px;
+              background-color: #f9f9f9;
+              margin-bottom: 15px;
+              width: 48%;
+          }
+  
+        </style>
+  
+        <div class="card-body">
+          <p>お客様からのコメント</p>
+          <div class="comment-box">
+            訪問日：{{ review.visit_date|date:"Y年m月d日" }}<br>
+            投稿日：{{ review.created_at|date:"Y年m月d日" }}<br>
+            コメント：<br>{{ review.comment }}
+          </div>
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <label for="review_reply" class="form-label">返信の編集</label>
+            <br>
+                {{ form.reply }}
+            <br>
+            <button type="submit" class="btn btn-primary">更新</button>
+            <a href="{% url 'review_list_2' object.restaurant.id %}" class="btn btn-secondary">キャンセル</a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+{% endblock %}

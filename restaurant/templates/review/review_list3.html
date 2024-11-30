@@ -1,0 +1,153 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+<main>
+
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xxl-10 col-xl-10 col-lg-10 col-md-10">
+        <br><br>
+        <h1 class="mb-3 text-center">レビュー管理</h1>
+        <br>
+        <form method="get" action="{% url 'review_list_3' %}">
+          <div class="input-group mb-3  search-rl3">
+            <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="キーワードで検索" aria-label="キーワードで検索">
+            <input type="hidden" name="ordering" value="{{ current_ordering }}">
+            <button class="btn btn-outline-secondary" type="submit">検索</button>
+          </div>
+        </form>
+        
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col" class="col-rvl3-id">
+                <a href="?{% if current_ordering == 'id' %}ordering=-id{% else %}ordering=id{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  レビューID
+                </a>
+              </th>
+              <th scope="col" class="col-rvl3-comment">
+                <a href="?{% if current_ordering == 'customer_id' %}ordering=-customer_id{% else %}ordering=customer_id{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  投稿者ID
+                </a>
+                ＆コメント
+              </th>
+              <th scope="col" class="col-rvl3-reply">
+                <a href="?{% if current_ordering == 'restaurant_id' %}ordering=-restaurant_id{% else %}ordering=restaurant_id{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  店舗ID
+                </a>
+                ＆返信
+              </th>
+              <th scope="col" class="col-rvl3-display">
+                <a href="?{% if current_ordering == 'display_masked' %}ordering=-display_masked{% else %}ordering=display_masked{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  表示フラグ
+                </a>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for review in object_list %}
+            <tr>
+              <td class="col-rvl3-id">
+                ID：{{ review.id }}
+              </td>
+              <td class="col-rvl3-comment">
+                投稿者ID：{{ review.customer_id }}
+                <br>
+                投稿者：{{ review.customer.user_name }}
+                <br>
+                訪問日：{{ review.visit_date }}
+                <div class="reply-part">
+                  <span style="font-weight: bold;">コメント</span>
+                <br>
+                {{ review.comment }}
+                </div>
+              </td>
+              <td class="col-rvl3-reply">
+                店舗ID：{{ review.restaurant_id }}
+                <br>
+                店舗名：{{ review.restaurant.shop_name }}
+                <div class="reply-part">
+                  <span style="font-weight: bold;">返信</span>
+                  <a href="{% url 'review_update2' review.restaurant_id review.id %}" class="btn btn-sm btn-primary" style="margin: 5px;">返信を編集
+                  </a>
+                <br>
+                {{ review.reply|default:"未返信" }}
+                </div>
+              </td>
+              <td class="col-rvl3-display">
+                <span style="font-weight: bold;">{{ review.display_masked|yesno:"非表示中,表示中" }}</span>
+                <form method="post" action="{% url 'toggle_display_masked' review.pk %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-warning" style="margin: 5px 0;">
+                    {{ review.display_masked|yesno:"表示にする,非表示にする" }}
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        <!-- ページネーション処理-->
+        {% if is_paginated %}
+        <div class="d-flex justify-content-center">
+          <nav>
+            <ul class="pagination">
+              <!-- First Page Link -->
+              {% if page_obj.number > 1 %}
+              <li class="page-item">
+                <a class="page-link" href="?page=1{% if request.GET.ordering %}&ordering={{ request.GET.ordering }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="First">&laquo; 先頭</a>
+              </li>
+              {% endif %}
+
+              <!-- Previous Page Link -->
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.ordering %}&ordering={{ request.GET.ordering }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" rel="prev" aria-label="Previous">&lsaquo;</a>
+              </li>
+              {% endif %}
+        
+              <!-- Page Range -->
+              {% with 15 as step %}
+                {% for page_num in page_obj.paginator.page_range %}
+                  {% if page_num == 1 or page_num == page_obj.paginator.num_pages or page_num|divisibleby:step or page_num >= page_obj.number|add:-3 and page_num <= page_obj.number|add:3 %}
+                    {% if page_obj.number == page_num %}
+                    <li class="page-item active" aria-current="page">
+                      <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ page_num }}{% if request.GET.ordering %}&ordering={{ request.GET.ordering }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}">{{ page_num }}</a>
+                      {% comment %} <a class="page-link" href="?page={{ page_num }}{% if request.GET.select_sort %}&select_sort={{ request.GET.select_sort }}{% endif %}{% if request.GET.price %}&price={{ request.GET.price }}{% endif %}{% if request.GET.keyword %}&keyword={{ request.GET.keyword }}{% endif %}">{{ page_num }}</a> {% endcomment %}
+                    </li>
+                    {% endif %}
+                  {% elif page_num == page_obj.number|add:-4 or page_num == page_obj.number|add:4 %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                  {% endif %}
+                {% endfor %}
+              {% endwith %}
+        
+              <!-- Next Page Link -->
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.ordering %}&ordering={{ request.GET.ordering }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" rel="next" aria-label="Next">&rsaquo;</a>
+              </li>
+              {% endif %}
+        
+              <!-- Last Page Link -->
+              {% if page_obj.number < page_obj.paginator.num_pages %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.ordering %}&ordering={{ request.GET.ordering }}{% endif %}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}" aria-label="Last">最後 &raquo;</a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+

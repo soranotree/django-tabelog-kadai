@@ -1,0 +1,28 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+{% load humanize %}
+<main>
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xxl-8 col-xl-8 col-lg-8 col-md-8">
+        <br>
+        <h1 class="mb-3 text-center">カテゴリーの登録</h1>
+        {% comment %} <a href="{% url 'category_list_3' %}">戻る</a> {% endcomment %}
+        <br>
+
+        <div class="card-body">
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="mb-3">
+              <a href="{% url 'category_list_3' %}">戻る</a>
+              <button type="submit" class="btn btn-primary">登録</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+{% endblock %}

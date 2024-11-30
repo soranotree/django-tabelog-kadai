@@ -1,0 +1,108 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+{% comment %} {% load humanize %} {% endcomment %}
+<main>
+
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xxl-8 col-xl-8 col-lg-8 col-md-8">
+        <br>
+        <h1 class="mb-3 text-center">カテゴリー管理</h1>
+        <a href="{% url 'category_create_3' %}">新規カテゴリーの登録</a>
+        <br><br>
+        
+        <form method="get" action="{% url 'category_list_3' %}">
+          <div class="input-group mb-3  search-rl3">
+            <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="キーワードで検索" aria-label="キーワードで検索">
+            <input type="hidden" name="ordering" value="{{ current_ordering }}">
+            <button class="btn btn-outline-secondary" type="submit">検索</button>
+          </div>
+        </form>
+        
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col" class="col-cat-id">
+                <a href="?{% if current_ordering == 'id' %}ordering=-id{% else %}ordering=id{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  カテゴリーID
+                </a>
+              </th>
+              <th scope="col" class="col-cat-name">
+                カテゴリー名
+              </th>
+              <th scope="col" class="col-cat-photo">
+                写真
+              </th>
+              <th scope="col" class="col-cat-action">
+                アクション
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for category in object_list %}
+            <tr>
+              <td class="col-cat-id">
+                ID：{{ category.id }}
+              </td>
+              <td class="col-cat-name">
+                {{ category.name }}
+              </td>
+              <td class="col-cat-photo">
+                {% if category.photo %}
+                    <img src="{{ category.photo.url }}" alt="Category Photo" style="width: 100px; height: auto;">
+                    <br>
+                    <a href="{{ category.photo.url }}" target="_blank">写真へのリンク
+                    </a>
+                {% else %}
+                    無し
+                {% endif %}
+              </td>
+              <td class="col-rl3-action">
+                <button class="btn btn-secondary" onclick="location.href='{% url 'category_update3' pk=category.pk %}'" style="margin: 5px 0;">編集</button>
+                <button class="btn btn-danger" onclick="if(confirm('本当に削除しますか？')) { location.href='{% url 'category_delete3' pk=category.pk %}'; }" style="margin: 5px 0;">削除</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        {% if is_paginated %}
+        <div class="d-flex justify-content-center">
+          <nav>
+            <ul class="pagination">
+              <!-- 前ページへのリンク-->
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&ordering={{ current_ordering }}{% if search_query %}&q={{ search_query }}{% endif %}" rel="prev" aria-label="&laquo; 前">&lsaquo;</a>
+              </li>
+              {% endif %}
+        
+              <!-- ページ数表示-->
+              {% for page_num in page_obj.paginator.page_range %}
+              {% if page_obj.number == page_num %}
+              <li class="page-item active" aria-current="page"><span class="page-link">{{ page_num }}</span></li>
+              {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_num }}&ordering={{ current_ordering }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ page_num }}</a>
+              </li>
+              {% endif %}
+              {% endfor %}
+        
+              <!-- 次ページへのリンク-->
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&ordering={{ current_ordering }}{% if search_query %}&q={{ search_query }}{% endif %}" rel="next" aria-label="次 &raquo;">&rsaquo;</a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

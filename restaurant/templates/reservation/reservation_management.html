@@ -1,0 +1,150 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+<main>
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12">
+      {% comment %} <div class="col-xxl-6 col-xl-7 col-lg-8 col-md-10"> {% endcomment %}
+        <nav class="my-3" style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item active" aria-current="page"><a href="{% url 'restaurant_list_2' user.id %}">保有店舗一覧</a></li>
+            <li class="breadcrumb-item active" aria-current="page">予約枠管理</li>
+          </ol>
+        </nav>
+
+        {% if messages %}
+        <div class="alert alert-success">
+          {% for message in messages %}
+          {{ message }}
+          {% endfor %}
+        </div>
+        {% endif %}
+
+
+        <style>
+          .badge {
+            display: inline-block;
+            padding: 0.5em;
+            font-size: 0.875em;
+          }
+          .bg-red {
+            background-color: red;
+          }
+          .bg-pink {
+            background-color: pink;
+            color: gray;
+          }
+          .bg-green {
+            background-color: green;
+          }
+          .bg-gray {
+            background-color: gray;
+          }
+        </style>  
+
+        <h1 class="mb-3 text-center">予約枠管理</h1>
+        <h2 class="mb-3 text-center">【{{ restaurant.shop_name }}】</h2>
+        <a href="{% url 'restaurant_list_2' user.id %}">戻る</a>
+        <br>
+        <a href="{% url 'reservation_slot_create' restaurant.id %}">予約枠を作成する</a>
+
+        
+        <br>
+        <br>
+
+        <form method="get" class="mb-3 ">
+          <label for="date">日付選択:</label>
+          <input type="date" id="date" name="date" class="form-control d-inline-block w-auto"
+                 value="{{ selected_date|date:'Y-m-d' }}">
+        
+          <label for="dining_table">テーブル選択:</label>
+          <select id="dining_table" name="dining_table" class="form-control d-inline-block w-auto">
+            {% comment %} <option value="">テーブルを選択</option> {% endcomment %}
+            {% for table in tables %}
+              <option value="{{ table.id }}" {% if dining_table and dining_table.id == table.id %}selected{% endif %}>
+                {{ table.name_for_internal }}：{{ table.name_for_customer }}
+              </option>
+            {% endfor %}
+          </select>
+          <br>
+        
+          <button type="submit" class="btn btn-primary">選択</button>
+        </form>
+        
+        <hr>
+        
+        <div class="text-center mb-3">
+          <a href="?date={{ prev_week }}&dining_table={{ dining_table.id }}" class="btn btn-secondary">前の週</a>
+          <a href="?date={{ this_week }}&dining_table={{ dining_table.id }}" class="btn btn-primary">今週</a>
+          <a href="?date={{ next_week }}&dining_table={{ dining_table.id }}" class="btn btn-secondary">次の週</a>
+        </div>
+
+        {% if dining_table %}
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th scope="col" style="text-align: center;">時間</th>
+              {% for date in week_dates %}
+                <th scope="col" style="text-align: center;">{{ date|date:"Y-m-d" }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for time in time_slots %}
+              <tr>
+                <th scope="row" style="text-align: center;">{{ time }}</th>
+                {% for date in week_dates %}
+                  <td>
+                    <div class="center-content">
+                    {% with date_str=date|date:"Y-m-d" %}
+                      {% with time_str=time|stringformat:"s" %}
+                        {% with date_time=date_str|stringformat:"s " %}
+                          {% with date_time=date_time|add:time_str %}
+                            {% with reservation=reservations|get_reservation:date_time %}
+                              {% if reservation %}
+                                {% if reservation.is_booked and not reservation.is_dependent %}
+                                <a href="{% url 'reservation_list2' restaurant.id %}?from_date={{ reservation.date|date:'Y-m-d' }}&to_date={{ reservation.date|date:'Y-m-d' }}&order_by=date,time_start">
+                                  <span class="badge bg-red">予約中</span>
+                                  <br>
+                                  <span class="d-block text-center">{{ reservation.duration_min }}分</span>
+                                </a>
+                                {% elif reservation.is_booked and reservation.is_dependent %}
+                                <a href="{% url 'reservation_list2' restaurant.id %}?from_date={{ reservation.date|date:'Y-m-d' }}&to_date={{ reservation.date|date:'Y-m-d' }}&order_by=date,time_start">
+                                  <span class="badge bg-pink">継　続</span>
+                                </a>
+                                {% else %}
+                                <a>
+                                  <span class="badge bg-green">空き枠</span>
+                                  <br>
+                                  <span class="d-block text-center">{{ reservation.duration_min }}分</span>
+                                </a>
+                                {% endif %}
+                              {% else %}
+                                <span class="badge bg-gray">未設定</span>
+                              {% endif %}
+                            {% endwith %}
+                          {% endwith %}
+                        {% endwith %}
+                      {% endwith %}
+                    {% endwith %}
+                    </div>
+                  </td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% endif %}
+      
+      
+        <a href="{% url 'restaurant_list_2' user.id %}">戻る</a>
+        <br>
+        <a href="{% url 'reservation_slot_create' restaurant.id %}">予約枠を作成する</a>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

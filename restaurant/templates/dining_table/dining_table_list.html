@@ -1,0 +1,115 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+<main>
+
+  {% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li class="{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xxl-8 col-xl-8 col-lg-8 col-md-8">
+      {% comment %} <div class="col-xxl-6 col-xl-7 col-lg-8 col-md-10"> {% endcomment %}
+        <nav class="my-3" style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item active" aria-current="page"><a href="{% url 'restaurant_list_2' restaurant.id %}">保有店舗一覧</a></li>
+            <li class="breadcrumb-item active" aria-current="page">ダイニングテーブル一覧</li>
+          </ol>
+        </nav>
+        <h1 class="mb-3 text-center">ダイニングテーブル一覧</h1>
+        <h2 class="mb-3 text-center">【{{ restaurant.shop_name }}】</h2>
+        {% comment %} <a href="{% url 'dining_table_create' %}">ダイニングテーブルの追加</a> {% endcomment %}
+
+        <a href="{% url 'restaurant_list_2' user.id %}">戻る</a>
+        <br>
+        <a href="{% url 'dining_table_create' restaurant.id %}">新規作成</a>
+
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">店内用名称</th>
+              <th scope="col">HP掲載用名称</th>
+              <th scope="col">最少人数</th>
+              <th scope="col">最大人数</th>
+              <th scope="col">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for table in object_list %}
+            <tr>
+              <td>{{ table.name_for_internal }}</td>
+              <td>{{ table.name_for_customer }}</td>
+              <td class="text-center">{{ table.min_people }}</td>
+              <td class="text-center">{{ table.max_people }}</td>
+              <td>
+                <button class="btn btn-primary"  style="display:inline;"
+                        onclick="location.href='{% url 'dining_table_update' restaurant_id=restaurant.id pk=table.pk %}'">編集
+                </button>
+                <form action="{% url 'dining_table_delete' restaurant_id=restaurant.id pk=table.pk %}" 
+                      method="post" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger" onclick="return confirm('本当に削除しますか？');">削除</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <a href="{% url 'restaurant_list_2' user.id %}">戻る</a>
+
+        <!-- ページネーション処理-->
+        {% if is_paginated %}
+        <div class="d-flex justify-content-center">
+          <nav>
+            <ul class="pagination">
+              <!-- 前ページへのリンク-->
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}" rel="prev" aria-label="&laquo; 前">&lsaquo;</a>
+              </li>
+              {% endif %}
+
+              <!-- ページ数表示-->
+              {% for page_num in page_obj.paginator.page_range %}
+              {% if page_obj.number == page_num %}
+              <li class="page-item active" aria-current="page"><span class="page-link">{{ page_num }}</span></li>
+              {% else %}
+              <li class="page-item"><a class="page-link" href="?page={{ page_num }}">{{ page_num }}</a></li>
+              {% endif %}
+              {% endfor %}
+
+              <!-- 次ページへのリンク-->
+              {% if page_obj.has_next %}
+              <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}" rel="next" aria-label="次 &raquo;">&rsaquo;</a></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+<script>
+  // Check if there are query parameters for messages
+  const urlParams = new URLSearchParams(window.location.search);
+  const message = urlParams.get('message');
+  const messageType = urlParams.get('type');
+
+  if (message) {
+    // Use alert() to display the message
+    alert(message);
+
+    // Optionally, clear query parameters after showing the alert
+    history.replaceState(null, '', window.location.pathname);
+  }
+</script>
+{% endblock %}
+{% comment %} {% endblock %} {% endcomment %}

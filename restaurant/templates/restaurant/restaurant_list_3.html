@@ -1,0 +1,112 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+{% comment %} {% load humanize %} {% endcomment %}
+<main>
+
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12">
+      {% comment %} <div class="col-xxl-6 col-xl-7 col-lg-8 col-md-10"> {% endcomment %}
+        <br>
+        <h1 class="mb-3 text-center">店舗管理</h1>
+        <a href="{% url 'restaurant_create' %}">新店舗の登録</a>
+        <br><br>
+        
+        <form method="get" action="{% url 'restaurant_list_3' %}">
+          <div class="input-group mb-3  search-rl3">
+            <input type="text" name="q" value="{{ search_query }}" class="form-control" placeholder="キーワードで検索" aria-label="キーワードで検索">
+            <input type="hidden" name="ordering" value="{{ current_ordering }}">
+            <button class="btn btn-outline-secondary" type="submit">検索</button>
+          </div>
+        </form>
+        
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col" class="col-rl3-shopname">
+                店舗：
+                <a href="?{% if current_ordering == 'id' %}ordering=-id{% else %}ordering=id{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  IDソート
+                </a>
+              </th>
+              <th scope="col" class="col-rl3-owner">
+                所有者：
+                <a href="?{% if current_ordering == 'shop_owner_id' %}ordering=-shop_owner_id{% else %}ordering=shop_owner_id{% endif %}{% if page_obj.number > 1 %}&page={{ page_obj.number }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}">
+                  IDソート
+                </a>
+              </th>
+              <th scope="col" class="col-rl3-shop_rep">店長名</th>
+              <th scope="col" class="col-rl3-contact">住所＆連絡先</th>
+              <th scope="col" class="col-rl3-action">アクション</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for restaurant in object_list %}
+            <tr>
+              <td class="col-rl3-shopname">
+                ID：{{ restaurant.id }}
+                <br>
+                <a href="{% url 'restaurant_detail' restaurant.id %}">
+                  {{ restaurant.shop_name }}
+                </a>
+              </td>
+              <td class="col-rl3-owner">
+                ID：{{ restaurant.shop_owner_id }}
+                <br>
+                {{ restaurant.shop_owner.user_name }}
+              </td>
+              <td class="col-rl3-shop_rep">
+                {{ restaurant.owner_name }}
+              </td>
+              <td class="col-rl3-contact">
+                {{ restaurant.address }}<br>メール：{{ restaurant.email }}<br>電話：{{ restaurant.phone }}
+              </td>
+              <td class="col-rl3-action">
+                <button class="btn btn-secondary" onclick="location.href='{% url 'restaurant_update3' pk=restaurant.pk %}'" style="margin: 5px 0;">編集</button>
+                <button class="btn btn-danger" onclick="if(confirm('本当に削除しますか？')) { location.href='{% url 'restaurant_delete3' pk=restaurant.pk %}'; }" style="margin: 5px 0;">削除</button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        
+        {% if is_paginated %}
+        <div class="d-flex justify-content-center">
+          <nav>
+            <ul class="pagination">
+              <!-- 前ページへのリンク-->
+              {% if page_obj.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}&ordering={{ current_ordering }}{% if search_query %}&q={{ search_query }}{% endif %}" rel="prev" aria-label="&laquo; 前">&lsaquo;</a>
+              </li>
+              {% endif %}
+        
+              <!-- ページ数表示-->
+              {% for page_num in page_obj.paginator.page_range %}
+              {% if page_obj.number == page_num %}
+              <li class="page-item active" aria-current="page"><span class="page-link">{{ page_num }}</span></li>
+              {% else %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_num }}&ordering={{ current_ordering }}{% if search_query %}&q={{ search_query }}{% endif %}">{{ page_num }}</a>
+              </li>
+              {% endif %}
+              {% endfor %}
+        
+              <!-- 次ページへのリンク-->
+              {% if page_obj.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}&ordering={{ current_ordering }}{% if search_query %}&q={{ search_query }}{% endif %}" rel="next" aria-label="次 &raquo;">&rsaquo;</a>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
