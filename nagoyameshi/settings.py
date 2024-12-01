@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+import environ
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -185,11 +186,19 @@ ACCOUNT_FORMS = {
     'signup': 'accounts.forms.MySignupForm',
     }
 
+# Initialize environment variables
+env = environ.Env()
+# environ.Env.read_env()  # Reads from the .env file in the same directory as manage.py
+environ.Env.read_env(BASE_DIR / ".env")  # Explicitly point to the .env file
+
 # メール設定
-EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST='smtp.gmail.com'
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-# GitHubに上げない限りはベタ打ちでも大丈夫
-EMAIL_HOST_USER=os.environ['EMAIL_HOST_USER']
-EMAIL_HOST_PASSWORD=os.environ['EMAIL_HOST_PASSWORD']
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = env("EMAIL_HOST", default="smtp.example.com")
+EMAIL_PORT = env.int("EMAIL_PORT", default=587)  # Type-casting for integer
+EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)  # Type-casting for boolean
+EMAIL_HOST_USER = env("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
+
+# Stripe設定
+STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY")

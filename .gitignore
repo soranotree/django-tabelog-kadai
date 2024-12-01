@@ -1,2 +1,3 @@
 **/__pycache__/**
 .is_debug
+.env
