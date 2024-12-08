@@ -1,0 +1,27 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>支払いキャンセル</title>
+</head>
+<body>
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xl-5 col-lg-6 col-md-8">
+        <br>
+        <br>
+        <br>
+        <h1>支払いがキャンセルされました</h1>
+        <p>手続きをやり直してください</p>
+        <a href="{% url 'subscribe_register' %}">
+          <button>登録をやり直す</button>
+        </a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+{% endblock %}

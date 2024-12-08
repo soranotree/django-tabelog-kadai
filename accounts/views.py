@@ -1,7 +1,8 @@
 from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
-from django.shortcuts import render, redirect
-from django.urls import reverse_lazy
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse_lazy, reverse
+from django.http import HttpResponse
 from django.views import generic, View
 from django.db.models import Q
 
@@ -11,6 +12,10 @@ from allauth.account.models import EmailAddress
 from django.contrib.auth import logout
 from django.contrib import messages
 from allauth.account.utils import send_email_confirmation
+
+import stripe
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 
 # Create your views here.
 
@@ -93,47 +98,6 @@ class UserUpdateView(generic.UpdateView):
     def form_invalid(self, form):
         return super().form_invalid(form)
 
-class SubscribeRegisterView(View):
-  template = 'subscribe/subscribe_register.html'
-  def get(self, request):
-    context = {}
-    return render(self.request, self.template, context)
-  def post(self, request):
-    user_id = request.user.id
-    card_name = request.POST.get('card_name')
-    card_number = request.POST.get('card_number')
-    correct_cord_number = '4242424242424242'
-    if card_number != correct_cord_number:
-      context = {
-        'error_message': 'クレジットカード番号が正しくありません'
-        }
-      return render(self.request, self.template, context)
-    models.CustomUser.objects.filter(id=user_id).update(is_subscribed=True, card_name=card_name, card_number=card_number)
-    return redirect(reverse_lazy('top_page'))
-  
-class SubscribeCancelView(generic.TemplateView):
-  template_name = 'subscribe/subscribe_cancel.html'
-
-  def post(self, request):
-    user_id = request.user.id
-    models.CustomUser.objects.filter(id=user_id).update(is_subscribed=False)
-    return redirect(reverse_lazy('top_page'))
-
-class SubscribePaymentView(View):
-  template = 'subscribe/subscribe_payment.html'
-  def get(self, request):
-    user_id = request.user.id
-    user = models.CustomUser.objects.get(id=user_id)
-    context = {'user': user}
-    return render(self.request, self.template, context)
-  def post(self, request):
-    user_id = request.user.id
-    card_name = request.POST.get('card_name')
-    card_number = request.POST.get('card_number')
-    expiry = request.POST.get('expiry')
-    print(card_name, card_number, expiry)
-    models.CustomUser.objects.filter(id=user_id).update(card_name=card_name, card_number=card_number, expiry=expiry)
-    return redirect(reverse_lazy('top_page'))
   
 class UserListView3(generic.ListView):
     template_name = "user/user_list_3.html"
@@ -174,3 +138,135 @@ class UserDeleteView(generic.DeleteView):
     model = models.CustomUser
     template_name = "user/user_confirm_delete.html"
     success_url = reverse_lazy('user_list_3')
+
+# Stripe APIキーを設定
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+# Stripeの支払いview
+# class CreateCheckoutSessionView(LoginRequiredMixin, View):
+class CreateCheckoutSessionView(View):
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            # Redirect to top page if user is not authenticated
+            return redirect('login')
+        
+        # Fetch user account type
+        account_type = request.user.account_type
+
+        # Determine the price ID based on account type
+        if account_type == 1:
+            price_id = 'price_1QTJEeFFoc76Aq0w4zqfDUjD'
+        elif account_type == 2:
+            price_id = 'price_1QTjgfFFoc76Aq0whQ6F2KID'
+        else:
+            # Redirect to top page for other cases (e.g., account_type = 3 or any other case)
+            return redirect('top_page')
+
+        # Create checkout session with the determined price
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': price_id,
+                'quantity': 1,
+            }],
+            mode='subscription',
+            success_url=f"{settings.YOUR_DOMAIN}/accounts/subscription_success/?session_id={{CHECKOUT_SESSION_ID}}&user_id={request.user.id}",
+            cancel_url=f"{settings.YOUR_DOMAIN}/accounts/subscription_cancel/",
+        )
+
+        # Redirect to Stripe checkout session URL
+        return redirect(checkout_session.url, code=303)
+    
+    def get(self, request, *args, **kwargs):
+        return render(request, 'subscribe/subscribe_register.html')
+
+# 支払い成功（会員のみ）
+class CheckoutSuccessView(View):
+    def get(self, request, *args, **kwargs):    
+        session_id = request.GET.get('session_id')
+        user_id = request.GET.get('user_id')
+
+        if not session_id or not user_id:
+            return HttpResponse("Invalid request", status=400)
+        # ユーザーの subscription 項目を更新
+        user = get_object_or_404(models.CustomUser, id=user_id)
+        session = stripe.checkout.Session.retrieve(session_id)
+        user.subscription_id = session.subscription  # Save the subscription ID
+        user.is_subscribed = True
+        user.save()
+        
+        return render(request, 'subscribe/subscription_success.html')
+
+class SubscribeCancelView(View):
+    template_name = 'subscribe/subscribe_cancel.html'
+
+    def get(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return redirect(reverse('login'))  # Redirect to login if not authenticated
+        return render(request, self.template_name)
+
+    def post(self, request):
+        user = request.user
+        if not user.is_authenticated:
+            return redirect(reverse('login'))  # Redirect to login if not authenticated
+
+        try:
+            # Cancel subscription on Stripe
+            stripe_subscription_id = user.subscription_id
+            stripe.Subscription.delete(stripe_subscription_id)
+
+            # Update user's subscription status
+            user.is_subscribed = False
+            user.stripe_subscription_id = None
+            user.save()
+
+            # Redirect to success page
+            return redirect(reverse('top_page'))
+
+        except Exception as e:
+            # Handle errors during cancellation
+            print(f"Error during subscription cancellation: {e}")
+            return redirect(reverse('subscribe_cancel_error'))
+
+# サブスク（解約エラー）
+class SubscribeCancelErrorView(generic.TemplateView):
+    template_name = "subscribe/subscribe_cancel_error.html"
+
+
+# class SubscribeCancelView(generic.TemplateView):
+#   template_name = 'subscribe/subscribe_cancel.html'
+
+#   def post(self, request):
+#     user_id = request.user.id
+#     models.CustomUser.objects.filter(id=user_id).update(is_subscribed=False)
+#     return redirect(reverse_lazy('top_page'))
+
+
+
+
+    
+# サブスク（支払い完了）
+# class SubscriptionSuccessView(generic.TemplateView):
+#     template_name = "subscribe/subscription_success.html"
+    
+# サブスク（キャンセル）
+class SubscriptionCancelView(generic.TemplateView):
+    template_name = "subscribe/subscription_cancel.html"
+
+# セキュリティの観点からアプリでは保存しない。すべてStripeで入力するようにする。
+# class SubscribePaymentView(View):
+#   template = 'subscribe/subscribe_payment.html'
+#   def get(self, request):
+#     user_id = request.user.id
+#     user = models.CustomUser.objects.get(id=user_id)
+#     context = {'user': user}
+#     return render(self.request, self.template, context)
+#   def post(self, request):
+#     user_id = request.user.id
+#     card_name = request.POST.get('card_name')
+#     card_number = request.POST.get('card_number')
+#     expiry = request.POST.get('expiry')
+#     print(card_name, card_number, expiry)
+#     models.CustomUser.objects.filter(id=user_id).update(card_name=card_name, card_number=card_number, expiry=expiry)
+#     return redirect(reverse_lazy('top_page'))

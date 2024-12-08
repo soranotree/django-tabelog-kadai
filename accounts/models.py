@@ -19,6 +19,7 @@ class CustomUser(AbstractUser):
   expiry = models.CharField(max_length=7, null=True, blank=True, verbose_name='カード有効期限', help_text='YYYY-MM形式で入力してください')
   created_at = models.DateTimeField(verbose_name='お気に入り登録日時', auto_now_add=True)
   updated_at = models.DateTimeField(verbose_name='お気に入り更新日時', auto_now=True)
+  subscription_id = models.CharField(max_length=255, null=True, blank=True)
 
   class Meta:
     verbose_name_plural = 'CustomUser'

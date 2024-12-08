@@ -1,0 +1,36 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>支払い完了</title>
+</head>
+<body>
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+      <div class="col-xl-5 col-lg-6 col-md-8">
+        <br>
+        <br>
+        <br>
+        <h1>支払いが正常に完了しました</h1>
+        {% if user.is_authenticated and user.account_type == 1 %}
+        <p>有料プランを存分にお楽しみください！</p>
+        <a href="{% url 'top_page' %}">
+          <button>トップページへ</button>
+        </a>
+        {% elif user.is_authenticated and user.account_type == 2 %}
+        {% comment %} <p>あなたのビジネスの成功をお祈りしております！</p> {% endcomment %}
+        <br>
+        <a href="{% url 'restaurant_list_2' user.id %}">
+          <button>店舗管理ページへ</button>
+        </a>
+        {% else %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+{% endblock %}

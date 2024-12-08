@@ -947,34 +947,6 @@ class MenuDeleteView(generic.DeleteView):
     # Call the super delete method to perform the deletion
     self.object = self.get_object()
     return super().delete(request, *args, **kwargs)
-# class MenuDeleteView(generic.DeleteView):
-#   model = models.Menu
-#   template_name = 'menu/menu_delete.html'
-#   context_object_name = 'menu'
-
-#   def get_success_url(self):
-#     # Redirect to the list of menus for the restaurant after deletion
-#     restaurant_id = self.object.restaurant.id  # Get the restaurant ID from the object being deleted
-#     return reverse_lazy('menu_list', kwargs={'restaurant_id': restaurant_id})
-
-#   def form_valid(self, form):
-#    # First, delete the menu item
-#     response = super().form_valid(form)
-
-#     # Update the min_price and max_price of the restaurant
-#     restaurant = self.object.restaurant  # Get the associated restaurant
-#     min_price = models.Menu.objects.filter(restaurant=restaurant).aggregate(Min('price'))['price__min']
-#     max_price = models.Menu.objects.filter(restaurant=restaurant).aggregate(Max('price'))['price__max']
-#     restaurant.min_price = min_price if min_price is not None else None
-#     restaurant.max_price = max_price if max_price is not None else None
-#     restaurant.save()
-
-#     return response
-
-#   def delete(self, request, *args, **kwargs):
-#     # Call the super delete method to perform the deletion
-#     self.object = self.get_object()
-#     return super().delete(request, *args, **kwargs)
 
 """ レビューの一覧表示（店舗オーナー用） ================================== """
 class ReviewListView2(generic.ListView):
@@ -1019,7 +991,7 @@ class ReviewListView2(generic.ListView):
         })
         return context
 
-""" レビューの返信 ================================== """
+""" レビューの返信（店舗オーナー用） ================================== """
 class ReviewUpdateView2(generic.UpdateView):
     model = models.Review
     fields = ['reply']

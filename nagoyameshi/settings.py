@@ -202,3 +202,12 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")
 # Stripe設定
 STRIPE_SECRET_KEY = env("STRIPE_SECRET_KEY")
 STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY")
+
+# YOUR_DOMAINが開発環境と本番環境で変わるように記述
+# Detect the environment
+ENVIRONMENT = os.getenv('DJANGO_ENV', 'development')
+
+if ENVIRONMENT == 'production':
+    YOUR_DOMAIN = "https://your-production-domain.com"
+else:
+    YOUR_DOMAIN = "http://127.0.0.1:8000"
