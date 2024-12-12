@@ -17,7 +17,8 @@
 
         <h1 class="mb-3 text-center">予約枠作成</h1>
         <h2 class="mb-3 text-center">【{{ restaurant.shop_name }}】</h2>
-        <a href="{% url 'restaurant_list_2' user.id %}">戻る</a>
+        <a href="{% url 'restaurant_list_2' user.id %}">保有店舗一覧に戻る</a>
+        <br>
         <br>
         
         {% if success_message %}
