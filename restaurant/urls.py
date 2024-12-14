@@ -34,6 +34,7 @@ urlpatterns = [
   path('restaurant/<int:restaurant_id>/reservations', views.ReservationListView2.as_view(), name='reservation_list2'),
   path('restaurant/<int:restaurant_id>/reservations/reservation-management', views.ReservationManagementView.as_view(), name='reservation_management'),
   path('restaurant/<int:restaurant_id>/reservations/reservation-slots/', views.ReservationSlotCreateView.as_view(), name='reservation_slot_create'),
+  # path('restaurant/<int:restaurant_id>/reservations/reservation-slots-test/', views.ReservationSlotCreateTestView.as_view(), name='reservation_slot_create_test'),
   path("restaurant-list-3/", views.RestaurantListView3.as_view(), name="restaurant_list_3"),
   path('restaurant-update3/<int:pk>/', views.RestaurantUpdateView3.as_view(), name='restaurant_update3'),
   path('restaurant-delete3/<int:pk>/', views.RestaurantDeleteView3.as_view(), name='restaurant_delete3'),
@@ -42,4 +43,5 @@ urlpatterns = [
   path('category/category-update-3/<int:pk>/', views.CategoryUpdateView3.as_view(), name='category_update3'),
   path('category/category-create-3/', views.CategoryCreateView3.as_view(), name='category_create_3'),
   path('category/category-delete3/<int:pk>/', views.CategoryDeleteView3.as_view(), name='category_delete3'),
+  # path('test-flatpickr/', views.test_flatpickr, name='test_flatpickr'),
   ]

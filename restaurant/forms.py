@@ -76,7 +76,7 @@ class RestaurantCreateForm(forms.ModelForm):
     self.fields['description'].widget.attrs['rows'] = '10'  # Specify the number of rows for the textarea
     self.fields['description'].widget.attrs['placeholder'] = '店舗の詳細を記入してください'  # Optional placeholder text  #   self.fields['visit_date'].widget.attrs['class'] = 'form-control'
     self.fields['business_time'].widget.attrs['placeholder'] = '例：9:30～22:00'  # Optional placeholder text  #   self.fields['visit_date'].widget.attrs['class'] = 'form-control'
-    self.fields['close_day_of_week'].widget.attrs['placeholder'] = '例：「火、水」、「不定休」、「年中無休」'  # Optional placeholder text  #   self.fields['visit_date'].widget.attrs['class'] = 'form-control'
+    self.fields['close_day_of_week'].widget.attrs['placeholder'] = '例：「火、水」、「不定休」'  # Optional placeholder text  #   self.fields['visit_date'].widget.attrs['class'] = 'form-control'
 
 class RestaurantUpdateForm(forms.ModelForm):
   class Meta:

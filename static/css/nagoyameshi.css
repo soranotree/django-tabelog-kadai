@@ -499,3 +499,11 @@ th-child(7n + 1) {
 .col-rvl3-display {
   width: 15%;
 }
+
+.arrange label {
+  min-width: 200px;
+}
+
+#id_photo {
+  margin-left: 165px;
+}

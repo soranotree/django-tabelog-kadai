@@ -241,10 +241,6 @@ class SubscribeCancelErrorView(generic.TemplateView):
 #     user_id = request.user.id
 #     models.CustomUser.objects.filter(id=user_id).update(is_subscribed=False)
 #     return redirect(reverse_lazy('top_page'))
-
-
-
-
     
 # サブスク（支払い完了）
 # class SubscriptionSuccessView(generic.TemplateView):

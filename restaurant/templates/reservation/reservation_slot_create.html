@@ -107,3 +107,129 @@
 </div>
 </main>
 {% endblock %}
+
+
+{% comment %} {% extends "layout/base.html" %}
+{% load static %}
+{% load custom_filters %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+<main>
+  <div class="container nagoyameshi-container pb-5">
+    <div class="row justify-content-center">
+        <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12">
+        <nav class="my-3" style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+          <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item active" aria-current="page"><a href="{% url 'restaurant_list_2' user.id %}">保有店舗一覧</a></li>
+            <li class="breadcrumb-item active" aria-current="page">予約枠管理</li>
+          </ol>
+        </nav>
+
+        <h1 class="mb-3 text-center">予約枠作成</h1>
+        <h2 class="mb-3 text-center">【{{ restaurant.shop_name }}】</h2>
+        <a href="{% url 'restaurant_list_2' user.id %}">保有店舗一覧に戻る</a>
+        <br>
+        <br>
+        
+        {% if success_message %}
+        <div class="alert alert-success">{{ success_message }}</div>
+        {% endif %}
+        
+        <form method="post" id="slotForm">
+          {% csrf_token %}
+
+          <div class="form-group">
+              <label for="selected_dates">選択された日付:</label>
+              <div id="calendar"></div>
+              <input type="hidden" id="selected_dates" name="selected_dates">
+          </div>
+      
+          <table class="table table-bordered mt-3">
+              <thead>
+                  <tr>
+                      <th>時間</th>
+                      <th>滞在時間 (分)</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  {% for time in time_slots %}
+                  <tr>
+                      <td>{{ time }}</td>
+                      <td>
+                          <input type="number" name="duration_min" value="90" class="form-control d-inline-block w-auto" required>
+                      </td>
+                  </tr>
+                  {% endfor %}
+              </tbody>
+          </table>
+          <br>
+
+          <div class="form-group mt-3">
+              <label><h2 class="mb-3 text-center">適用する席の選択</h2></label><br>
+              <button type="button" class="btn btn-secondary" id="select-all">全て選択</button>
+              <button type="button" class="btn btn-secondary" id="clear-all">クリアー</button>
+              <br><br>
+              {% for table in tables %}
+                  <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="table_{{ table.id }}" name="tables" value="{{ table.id }}" checked>
+                      <label class="form-check-label" for="table_{{ table.id }}">{{ table.name_for_internal }}：{{ table.name_for_customer }}</label>
+                  </div>
+              {% endfor %}
+          </div>
+          <button type="submit" class="btn btn-primary mt-3">予約枠を作成する</button>
+        </form>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); color: white; text-align: center; padding-top: 20%; font-size: 24px;">
+            予約枠を作成中です。お待ちください。
+        </div>
+
+        {% block extra_js %}
+        <!-- Include Flatpickr CSS and JS from CDN -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const calendar = document.getElementById('calendar');
+                const selectedDates = new Set();
+
+                flatpickr(calendar, {
+                    mode: "multiple",
+                    dateFormat: "Y-m-d",
+                    onChange: function(selectedDatesArray) {
+                        selectedDates.clear();
+                        selectedDatesArray.forEach(date => selectedDates.add(date.toISOString().split('T')[0]));
+                        document.getElementById('selected_dates').value = Array.from(selectedDates).join(',');
+                    }
+                });
+            });
+
+            // JavaScript to display the loading overlay when the form is submitted
+            document.getElementById('slotForm').addEventListener('submit', function() {
+                document.getElementById('loadingOverlay').style.display = 'block';
+            });
+
+            // JavaScript for handling "Select All" and "Clear" functionality
+            document.getElementById('select-all').addEventListener('click', function() {
+                const checkboxes = document.querySelectorAll('input[name="tables"]');
+                checkboxes.forEach((checkbox) => {
+                    checkbox.checked = true; // Check all checkboxes
+                });
+            });
+
+            document.getElementById('clear-all').addEventListener('click', function() {
+                const checkboxes = document.querySelectorAll('input[name="tables"]');
+                checkboxes.forEach((checkbox) => {
+                    checkbox.checked = false; // Uncheck all checkboxes
+                });
+            });
+        </script>
+        {% endblock %}
+        <br>
+        <a href="{% url 'restaurant_list_2' user.id %}">戻る</a>
+    </div>
+  </div>
+</div>
+</main>
+{% endblock %} {% endcomment %}

@@ -19,7 +19,7 @@
         <a href="{% url 'dining_table_list' restaurant.id %}">戻る</a>
         <br><br>
         <div class="card-body">
-          <form method="post" enctype="multipart/form-data">
+          <form class="arrange" method="post" enctype="multipart/form-data">
             {% csrf_token %}
             {{ form.non_field_errors }}
             {{ form.errors }}  <!-- Add this line for error debugging -->

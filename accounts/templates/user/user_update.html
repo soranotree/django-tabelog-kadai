@@ -32,7 +32,7 @@
               </div>
             </label>
             <div class="col-md-7">
-              {% if user.account_type == 1 %}
+              {% if user.account_type == 1 or  user.account_type == 2 %}
               {{ object.get_account_type_display }}（変更できません）
               {% elif user.account_type == 3 %}
               {{ form.account_type }}

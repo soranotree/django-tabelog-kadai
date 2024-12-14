@@ -14,9 +14,42 @@ from django.http import HttpResponseRedirect
 from urllib.parse import urlencode 
 from django.utils import timezone
 from django.utils.timezone import now
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 from . import models
 from . import forms
+
+""" セキュリティ対策 ================================== """
+class SubscriptionRequiredMixin(LoginRequiredMixin):
+    """Ensure the user is subscribed."""
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            # ユーザーがログインしていない場合、LoginRequiredMixinのデフォルト動作を利用
+            return self.handle_no_permission()
+        if not request.user.is_subscribed:
+            return redirect(reverse_lazy('subscribe_register'))
+        return super().dispatch(request, *args, **kwargs)
+
+class OwnerRequiredMixin(LoginRequiredMixin):
+    """Ensure the user is a restaurant owner."""
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            # ユーザーがログインしていない場合、LoginRequiredMixinのデフォルト動作を利用
+            return self.handle_no_permission()
+        if request.user.account_type != 2:
+            return redirect(reverse_lazy('top_page'))
+        return super().dispatch(request, *args, **kwargs)
+
+class SuperuserRequiredMixin(LoginRequiredMixin):
+    """Ensure the user is a superuser."""
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            # ユーザーがログインしていない場合、LoginRequiredMixinのデフォルト動作を利用
+            return self.handle_no_permission()
+        if request.user.account_type != 3:
+            return redirect(reverse_lazy('top_page'))
+        return super().dispatch(request, *args, **kwargs)
+
 
 """ トップ画面 ================================== """
 class TopPageView(generic.ListView):
@@ -213,7 +246,7 @@ class RestaurantListView(generic.ListView):
 
 
 """ お気に入り一覧画面 ================================== """
-class FavoriteListView(generic.ListView):
+class FavoriteListView(SubscriptionRequiredMixin, generic.ListView):
   model = models.Favorite
   template_name = 'favorite/favorite_list.html'
   def get_queryset(self):
@@ -235,22 +268,11 @@ def favorite_delete(request):
   return JsonResponse({'is_success': is_success})
 
 """ 新規予約登録画面 ================================== """
-class ReservationCreateView(generic.CreateView):
+class ReservationCreateView(SubscriptionRequiredMixin, generic.CreateView):
     template_name = "reservation/reservation_create.html"
     model = models.Reservation
     fields = []  # フォームは後で動的に生成します
-    # ガイドからの改修によりコメントアウト、フォームなしで実装にトライ
-    # form_class = forms.ReservationCreateForm
     success_url = reverse_lazy('reservation_list')
-
-    def get(self, request, **kwargs):
-        user = request.user
-        if user.is_authenticated and user.is_subscribed:
-            return super().get(request, **kwargs)
-        if not user.is_authenticated:
-            return redirect(reverse_lazy('account_login'))
-        if not user.is_subscribed:
-            return redirect(reverse_lazy('subscribe_register'))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -372,7 +394,7 @@ class ReservationCreateView(generic.CreateView):
         return redirect(self.success_url) 
   
 """ 予約一覧表示画面 ================================== """
-class ReservationListView(generic.ListView):
+class ReservationListView(SubscriptionRequiredMixin, generic.ListView):
   model = models.Reservation
   template_name = 'reservation/reservation_list.html'
   paginate_by = 5
@@ -380,13 +402,13 @@ class ReservationListView(generic.ListView):
   def get(self, request, **kwargs):
     user = request.user
     if user.is_authenticated and user.is_subscribed and user.account_type == 2:
-      return redirect(reverse_lazy('reservation_list2'))
+      return redirect(reverse_lazy('top_page'))
     if user.is_authenticated and user.is_subscribed and user.account_type == 1:
       return super().get(request, **kwargs)
-    if user.is_authenticated and not user.is_subscribed:
-      return redirect(reverse_lazy('subscribe_register'))
-    if not user.is_authenticated:
-      return redirect(reverse_lazy('account_login'))
+    # if user.is_authenticated and not user.is_subscribed:
+    #   return redirect(reverse_lazy('subscribe_register'))
+    # if not user.is_authenticated:
+    #   return redirect(reverse_lazy('account_login'))
   
   def get_queryset(self):
     queryset = models.Reservation.objects.filter(
@@ -496,21 +518,12 @@ class ReviewListView(generic.ListView):
     return context
 
 """ レビューの作成 ================================== """
-class ReviewCreateView(generic.CreateView):
+class ReviewCreateView(SubscriptionRequiredMixin, generic.CreateView):
   template_name = "review/review_create.html"
   model = models.Review
   form_class = forms.ReviewCreateForm
   success_url = None
   
-  def get(self, request, **kwargs):
-    user = request.user
-    if user.is_authenticated and user.is_subscribed:
-      return super().get(request, **kwargs)
-    if not user.is_authenticated:
-      return redirect(reverse_lazy('account_login'))
-    if not user.is_subscribed:
-      return redirect(reverse_lazy('subscribe_register'))
-    
   def form_valid(self, form):
     user_instance = self.request.user
     restaurant_instance = models.Restaurant(id=self.kwargs['pk'])
@@ -548,7 +561,7 @@ class ReviewCreateView(generic.CreateView):
     return context
 
 """ レビューの更新 ================================== """
-class ReviewUpdateView(generic.UpdateView):
+class ReviewUpdateView(SubscriptionRequiredMixin, generic.UpdateView):
   model = models.Review
   template_name = 'review/review_update.html'
   form_class = forms.ReviewCreateForm
@@ -595,18 +608,13 @@ def review_delete(request):
       review = get_object_or_404(models.Review, id=pk)
       restaurant = review.restaurant
       review.delete()
-      # Update the restaurant
-      # print(f'{ restaurant.shop_name }')
       restaurant.refresh_from_db()
       restaurant.review_num = models.Review.objects.filter(restaurant=restaurant, display_masked = 0).count()
-      # print(f'{ restaurant.review_num }')
       if restaurant.review_num == 0:
         restaurant.rate = None
       else:
         average_rate = models.Review.objects.filter(restaurant=restaurant, display_masked = 0).aggregate(Avg('rate'))['rate__avg']
         restaurant.rate = round(average_rate, 2)
-      # print(f'{ restaurant.rate }')
-      # print(f'{ restaurant.review_num }')
       restaurant.save()
     except:
       is_success = False
@@ -617,23 +625,12 @@ def review_delete(request):
 
 # 店舗側画面
 """ 保有レストラン一覧表示 ================================== """
-class RestaurantListView2(generic.ListView):
+class RestaurantListView2(OwnerRequiredMixin, generic.ListView):
   template_name = "restaurant/restaurant_list_2.html"
   model = models.Restaurant
   ordering = ['-created_at']
   paginate_by = 5
 
-  def get(self, request, **kwargs):
-      user = request.user
-      if user.is_authenticated and user.is_subscribed and user.account_type == 2:
-        return super().get(request, **kwargs)
-      if user.account_type == 1:
-        return redirect(reverse_lazy('top_page'))
-      if not user.is_subscribed:
-        return redirect(reverse_lazy('subscribe_register'))
-      if not user.is_authenticated:
-        return redirect(reverse_lazy('account_login'))
-  
   def get_queryset(self):
     return models.Restaurant.objects.filter(shop_owner=self.request.user)
 
@@ -735,7 +732,7 @@ class RestaurantUpdateView(generic.UpdateView):
 #   return JsonResponse({'is_success': is_success})
 
 """ ダイニングテーブル一覧 ================================== """
-class DiningTableListView(generic.ListView):
+class DiningTableListView(OwnerRequiredMixin, generic.ListView):
   template_name = "dining_table/dining_table_list.html"
   model = models.DiningTable
   paginate_by = 20
@@ -756,7 +753,7 @@ class DiningTableListView(generic.ListView):
     return context
 
 """ ダイニングテーブル編集 ================================== """
-class DiningTableUpdateView(generic.UpdateView):
+class DiningTableUpdateView(OwnerRequiredMixin, generic.UpdateView):
     model = models.DiningTable
     form_class = forms.DiningTableUpdateForm
     template_name = 'dining_table/dining_table_update.html'
@@ -779,7 +776,7 @@ class DiningTableUpdateView(generic.UpdateView):
         return context
 
 """ ダイニングテーブル作成 ================================== """
-class DiningTableCreateView(generic.CreateView):
+class DiningTableCreateView(OwnerRequiredMixin, generic.CreateView):
     template_name = 'dining_table/dining_table_create.html'
     model = models.DiningTable
     form_class = forms.DiningTableCreateForm
@@ -825,7 +822,7 @@ def dining_table_delete(request, restaurant_id, pk):
     return redirect('dining_table_list', restaurant_id=restaurant_id)
 
 """ メニュー一覧 ================================== """
-class MenuListView(generic.ListView):
+class MenuListView(OwnerRequiredMixin, generic.ListView):
   template_name = "menu/menu_list.html"
   model = models.DiningTable
   paginate_by = 5
@@ -841,7 +838,7 @@ class MenuListView(generic.ListView):
     return context
 
 """ メニュー編集 ================================== """
-class MenuUpdateView(generic.UpdateView):
+class MenuUpdateView(OwnerRequiredMixin, generic.UpdateView):
   model = models.Menu
   form_class = forms.MenuUpdateForm
   template_name = 'menu/menu_update.html'
@@ -884,7 +881,7 @@ class MenuUpdateView(generic.UpdateView):
     return response
 
 """ メニュー作成 ================================== """
-class MenuCreateView(generic.CreateView):
+class MenuCreateView(OwnerRequiredMixin, generic.CreateView):
   template_name = 'menu/menu_create.html'
   model = models.Menu
   form_class = forms.MenuCreateForm
@@ -920,7 +917,7 @@ class MenuCreateView(generic.CreateView):
     return context
 
 """ メニュー削除 ================================== """
-class MenuDeleteView(generic.DeleteView):
+class MenuDeleteView(OwnerRequiredMixin, generic.DeleteView):
   model = models.Menu
   context_object_name = 'menu'
 
@@ -949,7 +946,7 @@ class MenuDeleteView(generic.DeleteView):
     return super().delete(request, *args, **kwargs)
 
 """ レビューの一覧表示（店舗オーナー用） ================================== """
-class ReviewListView2(generic.ListView):
+class ReviewListView2(OwnerRequiredMixin, generic.ListView):
     template_name = "review/review_list2.html"
     model = models.Review
     ordering = ['-visit_date']
@@ -992,7 +989,7 @@ class ReviewListView2(generic.ListView):
         return context
 
 """ レビューの返信（店舗オーナー用） ================================== """
-class ReviewUpdateView2(generic.UpdateView):
+class ReviewUpdateView2(OwnerRequiredMixin, generic.UpdateView):
     model = models.Review
     fields = ['reply']
     template_name = "review/review_update2.html" 
@@ -1035,7 +1032,7 @@ def toggle_display_masked(request, pk):
       return redirect(reverse('review_list_2', kwargs={'pk': review.restaurant.id}))
 
 """ 予約リスト（店用） ================================== """
-class ReservationListView2(generic.ListView):
+class ReservationListView2(OwnerRequiredMixin, generic.ListView):
     model = models.Reservation
     template_name = 'reservation/reservation_list2.html'
     context_object_name = 'reservations'
@@ -1084,7 +1081,7 @@ class ReservationListView2(generic.ListView):
         return context
 
 """ 予約枠管理（店用） ================================== """
-class ReservationManagementView(generic.TemplateView):
+class ReservationManagementView(OwnerRequiredMixin, generic.TemplateView):
     template_name = 'reservation/reservation_management.html'
 
     def get(self, request, **kwargs):
@@ -1154,45 +1151,36 @@ class ReservationSlotCreateView(View):
     def get(self, request, **kwargs):
         user = request.user
         if not user.is_authenticated:
-          return redirect(reverse_lazy('account_login'))
+            return redirect(reverse_lazy('account_login'))
         if not user.is_subscribed:
-          return redirect(reverse_lazy('subscribe_register'))
+            return redirect(reverse_lazy('subscribe_register'))
         if user.account_type == 2:
-          context = self.get_context_data(**kwargs)
-          return render(request, self.template_name, context)
+            context = self.get_context_data(**kwargs)
+            return render(request, self.template_name, context)
         else:
-          return redirect(reverse_lazy('top_page'))
+            return redirect(reverse_lazy('top_page'))
 
     def get_context_data(self, **kwargs):
-        """Provide context for the form with restaurant and table details."""
         restaurant = get_object_or_404(models.Restaurant, id=self.kwargs['restaurant_id'])
         tables = models.DiningTable.objects.filter(restaurant=restaurant)
 
-        # Generate 30-minute time slots from 9:00 to 22:30
         start_time = timezone.datetime.combine(timezone.now(), timezone.datetime.min.time()) + timedelta(hours=9)
         time_slots = [(start_time + timedelta(minutes=30 * i)).time() for i in range(28)]
 
         return {'restaurant': restaurant, 'tables': tables, 'time_slots': time_slots}
 
     def post(self, request, *args, **kwargs):
-        """Handle slot creation for selected tables and date range."""
         restaurant = get_object_or_404(models.Restaurant, id=kwargs['restaurant_id'])
 
-        # Retrieve the date range and table selections from the form
-        selected_start_date = request.POST.get('from_date')
-        selected_end_date = request.POST.get('to_date')
+        selected_dates_str = request.POST.get('selected_dates')
+        selected_dates = [timezone.datetime.fromisoformat(date_str).date() for date_str in selected_dates_str.split(',')]
         selected_tables = request.POST.getlist('tables')
         duration_mins = [int(d) for d in request.POST.getlist('duration_min')]
-
-        # Convert selected dates to datetime.date objects
-        start_date = timezone.datetime.fromisoformat(selected_start_date).date()
-        end_date = timezone.datetime.fromisoformat(selected_end_date).date()
 
         created_slots = []
         updated_slots = []
 
-        current_date = start_date
-        while current_date <= end_date:
+        for current_date in selected_dates:
             for table_id in selected_tables:
                 table = get_object_or_404(models.DiningTable, id=table_id)
                 start_time = timezone.datetime.combine(current_date, timezone.datetime.min.time()) + timedelta(hours=9)
@@ -1200,7 +1188,6 @@ class ReservationSlotCreateView(View):
                 for i, duration in enumerate(duration_mins):
                     slot_time = start_time + timedelta(minutes=30 * i)
 
-                    # Check for existing reservations to avoid duplicates
                     reservation = models.Reservation.objects.filter(
                         restaurant=restaurant,
                         dining_table=table,
@@ -1211,13 +1198,12 @@ class ReservationSlotCreateView(View):
                     if reservation:
                         if not reservation.is_booked and reservation.duration_min != duration:
                             reservation.duration_min = duration
-                            updated_slots.append(reservation)  # Collect for bulk update
+                            updated_slots.append(reservation)
                             print(f"Updated {table.name_for_customer} at {slot_time} on {current_date}")
                         else:
                             print(f"Slot already booked for {table.name_for_customer} at {slot_time} on {current_date}")
                     else:
-                        # Create a new reservation if it doesn't exist
-                        created_slots.append(models.Reservation(  # Collect for bulk create
+                        created_slots.append(models.Reservation(
                             restaurant=restaurant,
                             dining_table=table,
                             date=current_date,
@@ -1225,28 +1211,126 @@ class ReservationSlotCreateView(View):
                             duration_min=duration,
                         ))
 
-            # Move to the next date
-            current_date += timedelta(days=1)
-
-        # Perform bulk operations in a single transaction
         with transaction.atomic():
             if created_slots:
-                models.Reservation.objects.bulk_create(created_slots)  # Bulk create
+                models.Reservation.objects.bulk_create(created_slots)
             if updated_slots:
-                models.Reservation.objects.bulk_update(updated_slots, ['duration_min'])  # Bulk update
+                models.Reservation.objects.bulk_update(updated_slots, ['duration_min'])
 
         created_slots_count = len(created_slots)
         updated_slots_count = len(updated_slots)
 
-        # Provide feedback to the user
         messages.success(
             request, 
             f"{created_slots_count}件の予約枠が作成されました。{updated_slots_count}件の予約枠が更新されました。"
         )
         return redirect('reservation_management', restaurant_id=restaurant.id)
 
+# """ カレンダー表示テスト =============================== """
+# def test_flatpickr(request):
+#     return render(request, 'reservation/test_flatpickr.html')
+
+# """ 予約枠作成（店用） ================================== """
+# class ReservationSlotCreateTestView(OwnerRequiredMixin, View):
+#     template_name = 'reservation/reservation_slot_create_test.html'
+
+#     def get(self, request, **kwargs):
+#         user = request.user
+#         if not user.is_authenticated:
+#           return redirect(reverse_lazy('account_login'))
+#         if not user.is_subscribed:
+#           return redirect(reverse_lazy('subscribe_register'))
+#         if user.account_type == 2:
+#           context = self.get_context_data(**kwargs)
+#           return render(request, self.template_name, context)
+#         else:
+#           return redirect(reverse_lazy('top_page'))
+
+#     def get_context_data(self, **kwargs):
+#         """Provide context for the form with restaurant and table details."""
+#         restaurant = get_object_or_404(models.Restaurant, id=self.kwargs['restaurant_id'])
+#         tables = models.DiningTable.objects.filter(restaurant=restaurant)
+
+#         # Generate 30-minute time slots from 9:00 to 22:30
+#         start_time = timezone.datetime.combine(timezone.now(), timezone.datetime.min.time()) + timedelta(hours=9)
+#         time_slots = [(start_time + timedelta(minutes=30 * i)).time() for i in range(28)]
+
+#         return {'restaurant': restaurant, 'tables': tables, 'time_slots': time_slots}
+
+#     def post(self, request, *args, **kwargs):
+#         """Handle slot creation for selected tables and date range."""
+#         restaurant = get_object_or_404(models.Restaurant, id=kwargs['restaurant_id'])
+
+#         # Retrieve the date range and table selections from the form
+#         selected_start_date = request.POST.get('from_date')
+#         selected_end_date = request.POST.get('to_date')
+#         selected_tables = request.POST.getlist('tables')
+#         duration_mins = [int(d) for d in request.POST.getlist('duration_min')]
+
+#         # Convert selected dates to datetime.date objects
+#         start_date = timezone.datetime.fromisoformat(selected_start_date).date()
+#         end_date = timezone.datetime.fromisoformat(selected_end_date).date()
+
+#         created_slots = []
+#         updated_slots = []
+
+#         current_date = start_date
+#         while current_date <= end_date:
+#             for table_id in selected_tables:
+#                 table = get_object_or_404(models.DiningTable, id=table_id)
+#                 start_time = timezone.datetime.combine(current_date, timezone.datetime.min.time()) + timedelta(hours=9)
+
+#                 for i, duration in enumerate(duration_mins):
+#                     slot_time = start_time + timedelta(minutes=30 * i)
+
+#                     # Check for existing reservations to avoid duplicates
+#                     reservation = models.Reservation.objects.filter(
+#                         restaurant=restaurant,
+#                         dining_table=table,
+#                         date=current_date,
+#                         time_start=slot_time
+#                     ).first()
+
+#                     if reservation:
+#                         if not reservation.is_booked and reservation.duration_min != duration:
+#                             reservation.duration_min = duration
+#                             updated_slots.append(reservation)  # Collect for bulk update
+#                             print(f"Updated {table.name_for_customer} at {slot_time} on {current_date}")
+#                         else:
+#                             print(f"Slot already booked for {table.name_for_customer} at {slot_time} on {current_date}")
+#                     else:
+#                         # Create a new reservation if it doesn't exist
+#                         created_slots.append(models.Reservation(  # Collect for bulk create
+#                             restaurant=restaurant,
+#                             dining_table=table,
+#                             date=current_date,
+#                             time_start=slot_time,
+#                             duration_min=duration,
+#                         ))
+
+#             # Move to the next date
+#             current_date += timedelta(days=1)
+
+#         # Perform bulk operations in a single transaction
+#         with transaction.atomic():
+#             if created_slots:
+#                 models.Reservation.objects.bulk_create(created_slots)  # Bulk create
+#             if updated_slots:
+#                 models.Reservation.objects.bulk_update(updated_slots, ['duration_min'])  # Bulk update
+
+#         created_slots_count = len(created_slots)
+#         updated_slots_count = len(updated_slots)
+
+#         # Provide feedback to the user
+#         messages.success(
+#             request, 
+#             f"{created_slots_count}件の予約枠が作成されました。{updated_slots_count}件の予約枠が更新されました。"
+#         )
+#         return redirect('reservation_management', restaurant_id=restaurant.id)
+
+
 """ レストラン一覧表示（システム管理者用） =============================== """
-class RestaurantListView3(generic.ListView):
+class RestaurantListView3(SuperuserRequiredMixin, generic.ListView):
     template_name = "restaurant/restaurant_list_3.html"
     model = models.Restaurant
     paginate_by = 15
@@ -1285,7 +1369,7 @@ class RestaurantListView3(generic.ListView):
             return redirect(reverse_lazy('top_page'))
           
 """ レストランの更新（システム管理者用） ================================== """
-class RestaurantUpdateView3(generic.UpdateView):
+class RestaurantUpdateView3(SuperuserRequiredMixin, generic.UpdateView):
     model = models.Restaurant
     template_name = 'restaurant/restaurant_update_3.html'
     form_class = forms.RestaurantUpdateForm
@@ -1300,13 +1384,14 @@ class RestaurantUpdateView3(generic.UpdateView):
     def get_success_url(self):
         return reverse_lazy('restaurant_list_3')
           
+""" レストランの削除（システム管理者用） ================================== """
 class RestaurantDeleteView3(generic.DeleteView):
     model = models.Restaurant
     template_name = 'restaurant/restaurant_confirm_delete.html'
     success_url = reverse_lazy('restaurant_list_3')
 
 """ レビュー一覧表示（システム管理者用） =============================== """
-class ReviewListView3(generic.ListView):
+class ReviewListView3(SuperuserRequiredMixin, generic.ListView):
     template_name = "review/review_list3.html"
     model = models.Review
     paginate_by = 15
@@ -1344,7 +1429,7 @@ class ReviewListView3(generic.ListView):
             return redirect(reverse_lazy('top_page'))
 
 """ カテゴリー一覧表示（システム管理者用） =============================== """
-class CategoryListView3(generic.ListView):
+class CategoryListView3(SuperuserRequiredMixin, generic.ListView):
     template_name = "category/category_list3.html"
     model = models.Category
     paginate_by = 15
@@ -1379,7 +1464,7 @@ class CategoryListView3(generic.ListView):
             return redirect(reverse_lazy('top_page'))
 
 """ カテゴリーの更新（システム管理者用）================================== """
-class CategoryUpdateView3(generic.UpdateView):
+class CategoryUpdateView3(SuperuserRequiredMixin, generic.UpdateView):
     model = models.Category
     template_name = 'category/category_update_3.html'
     form_class = forms.CategoryUpdateForm3
@@ -1399,7 +1484,7 @@ class CategoryUpdateView3(generic.UpdateView):
         return reverse_lazy('category_list_3')
 
 """ カテゴリー作成（システム管理者用） ================================== """
-class CategoryCreateView3(generic.CreateView):
+class CategoryCreateView3(SuperuserRequiredMixin, generic.CreateView):
     template_name = 'category/category_create_3.html'
     model = models.Category
     fields = '__all__'
@@ -1408,7 +1493,7 @@ class CategoryCreateView3(generic.CreateView):
         return reverse_lazy('category_list_3')
 
 """ カテゴリー削除（システム管理者用） ================================== """
-class CategoryDeleteView3(generic.DeleteView):
+class CategoryDeleteView3(SuperuserRequiredMixin, generic.DeleteView):
     model = models.Category
     template_name = 'category/category_confirm_delete.html'
     success_url = reverse_lazy('category_list_3')
