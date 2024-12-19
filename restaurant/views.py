@@ -15,6 +15,7 @@ from urllib.parse import urlencode
 from django.utils import timezone
 from django.utils.timezone import now
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 
 from . import models
 from . import forms
@@ -601,6 +602,9 @@ class ReviewUpdateView(SubscriptionRequiredMixin, generic.UpdateView):
 
 """ レビューの削除 ================================== """
 def review_delete(request):
+  if not getattr(request.user, 'is_subscribed', False):
+    return JsonResponse({'is_success': False, 'message': 'User not subscribed'}, status=403)
+  
   pk = request.GET.get('pk')
   is_success = True
   if pk:
@@ -1151,36 +1155,45 @@ class ReservationSlotCreateView(View):
     def get(self, request, **kwargs):
         user = request.user
         if not user.is_authenticated:
-            return redirect(reverse_lazy('account_login'))
+          return redirect(reverse_lazy('account_login'))
         if not user.is_subscribed:
-            return redirect(reverse_lazy('subscribe_register'))
+          return redirect(reverse_lazy('subscribe_register'))
         if user.account_type == 2:
-            context = self.get_context_data(**kwargs)
-            return render(request, self.template_name, context)
+          context = self.get_context_data(**kwargs)
+          return render(request, self.template_name, context)
         else:
-            return redirect(reverse_lazy('top_page'))
+          return redirect(reverse_lazy('top_page'))
 
     def get_context_data(self, **kwargs):
+        """Provide context for the form with restaurant and table details."""
         restaurant = get_object_or_404(models.Restaurant, id=self.kwargs['restaurant_id'])
         tables = models.DiningTable.objects.filter(restaurant=restaurant)
 
+        # Generate 30-minute time slots from 9:00 to 22:30
         start_time = timezone.datetime.combine(timezone.now(), timezone.datetime.min.time()) + timedelta(hours=9)
         time_slots = [(start_time + timedelta(minutes=30 * i)).time() for i in range(28)]
 
         return {'restaurant': restaurant, 'tables': tables, 'time_slots': time_slots}
 
     def post(self, request, *args, **kwargs):
+        """Handle slot creation for selected tables and date range."""
         restaurant = get_object_or_404(models.Restaurant, id=kwargs['restaurant_id'])
 
-        selected_dates_str = request.POST.get('selected_dates')
-        selected_dates = [timezone.datetime.fromisoformat(date_str).date() for date_str in selected_dates_str.split(',')]
+        # Retrieve the date range and table selections from the form
+        selected_start_date = request.POST.get('from_date')
+        selected_end_date = request.POST.get('to_date')
         selected_tables = request.POST.getlist('tables')
         duration_mins = [int(d) for d in request.POST.getlist('duration_min')]
+
+        # Convert selected dates to datetime.date objects
+        start_date = timezone.datetime.fromisoformat(selected_start_date).date()
+        end_date = timezone.datetime.fromisoformat(selected_end_date).date()
 
         created_slots = []
         updated_slots = []
 
-        for current_date in selected_dates:
+        current_date = start_date
+        while current_date <= end_date:
             for table_id in selected_tables:
                 table = get_object_or_404(models.DiningTable, id=table_id)
                 start_time = timezone.datetime.combine(current_date, timezone.datetime.min.time()) + timedelta(hours=9)
@@ -1188,6 +1201,7 @@ class ReservationSlotCreateView(View):
                 for i, duration in enumerate(duration_mins):
                     slot_time = start_time + timedelta(minutes=30 * i)
 
+                    # Check for existing reservations to avoid duplicates
                     reservation = models.Reservation.objects.filter(
                         restaurant=restaurant,
                         dining_table=table,
@@ -1198,12 +1212,13 @@ class ReservationSlotCreateView(View):
                     if reservation:
                         if not reservation.is_booked and reservation.duration_min != duration:
                             reservation.duration_min = duration
-                            updated_slots.append(reservation)
+                            updated_slots.append(reservation)  # Collect for bulk update
                             print(f"Updated {table.name_for_customer} at {slot_time} on {current_date}")
                         else:
                             print(f"Slot already booked for {table.name_for_customer} at {slot_time} on {current_date}")
                     else:
-                        created_slots.append(models.Reservation(
+                        # Create a new reservation if it doesn't exist
+                        created_slots.append(models.Reservation(  # Collect for bulk create
                             restaurant=restaurant,
                             dining_table=table,
                             date=current_date,
@@ -1211,21 +1226,27 @@ class ReservationSlotCreateView(View):
                             duration_min=duration,
                         ))
 
+            # Move to the next date
+            current_date += timedelta(days=1)
+
+        # Perform bulk operations in a single transaction
         with transaction.atomic():
             if created_slots:
-                models.Reservation.objects.bulk_create(created_slots)
+                models.Reservation.objects.bulk_create(created_slots)  # Bulk create
             if updated_slots:
-                models.Reservation.objects.bulk_update(updated_slots, ['duration_min'])
+                models.Reservation.objects.bulk_update(updated_slots, ['duration_min'])  # Bulk update
 
         created_slots_count = len(created_slots)
         updated_slots_count = len(updated_slots)
 
+        # Provide feedback to the user
         messages.success(
             request, 
             f"{created_slots_count}件の予約枠が作成されました。{updated_slots_count}件の予約枠が更新されました。"
         )
         return redirect('reservation_management', restaurant_id=restaurant.id)
 
+# """ カレンダーの日付をトグルSW選択としたいが、実装は今後の課題に20241215 """
 # """ カレンダー表示テスト =============================== """
 # def test_flatpickr(request):
 #     return render(request, 'reservation/test_flatpickr.html')
@@ -1388,7 +1409,18 @@ class RestaurantUpdateView3(SuperuserRequiredMixin, generic.UpdateView):
 class RestaurantDeleteView3(generic.DeleteView):
     model = models.Restaurant
     template_name = 'restaurant/restaurant_confirm_delete.html'
-    success_url = reverse_lazy('restaurant_list_3')
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.account_type not in [2, 3]:
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        if self.request.user.account_type == 2:
+            return reverse_lazy('restaurant_list_2', kwargs={'pk': self.request.user.pk})
+        elif self.request.user.account_type == 3:
+            return reverse_lazy('restaurant_list_3')
+        return reverse_lazy('top_page')
 
 """ レビュー一覧表示（システム管理者用） =============================== """
 class ReviewListView3(SuperuserRequiredMixin, generic.ListView):
