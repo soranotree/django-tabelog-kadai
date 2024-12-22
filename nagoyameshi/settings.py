@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-ofmelqfjp5!@v!28-$#)&m0t(hmz5qgep6g(j3%h#z5@q4_b$3"
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if os.path.exists("./.is_debug"):
@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     "allauth",
     "allauth.account",
     "allauth.socialaccount",
+    # S3
+    "storages",
 ]
 
 if DEBUG:
@@ -131,24 +133,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
 
 LANGUAGE_CODE = "ja"
-
 TIME_ZONE = "Asia/Tokyo"
-
 USE_I18N = True
-
 USE_TZ = True
-
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
-STATIC_URL = "static/"
-
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
-
-# メディアファイルの設定
-MEDIA_URL = "media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -211,3 +198,33 @@ if ENVIRONMENT == 'production':
     YOUR_DOMAIN = "https://your-production-domain.com"
 else:
     YOUR_DOMAIN = "http://127.0.0.1:8000"
+
+# S3設定
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="us-east-1")  # リージョンのデフォルト設定
+AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+
+# メディアファイルの設定
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/4.2/howto/static-files/
+# STATIC_URL = "static/" # S3使用前
+
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
+STATICFILES_STORAGE = "storages.backends.s3boto3.S3StaticStorage"
+
+# 開発環境でもS3を使うために静的ファイルの設定をコメントアウト
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),) # S3使用前
+
+# メディアファイルの設定
+# MEDIA_URL = "media/"  # S3使用前
+MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/media/"
+MEDIA_ROOT = "media/"
+DEFAULT_FILE_STORAGE = "nagoyameshi.storage_backends.MediaStorage"
+# DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+# 開発環境でもS3を使うためにメディアファイルの保存設定をコメントアウト
+# MEDIA_ROOT = os.path.join(BASE_DIR, "media")  # S3使用前

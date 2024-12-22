@@ -41,7 +41,15 @@
               <td class="text-center">{{ menu.price }}円</td>
               <td class="text-center">{{ menu.available_from }}</td>
               <td class="text-center">{{ menu.available_end }}</td>
-              <td>未完</td>
+              <td class="text-center">
+                {% if menu.photo %}
+                    <img src="{{ menu.photo.url }}" alt="Menu Photo" style="width: 100px; height: auto;">
+                    <br>
+                    <a href="{{ menu.photo.url }}" target="_blank">写真へのリンク
+                    </a>
+                {% else %}
+                {% endif %}
+              </td>
               <td>
                 <button class="btn btn-primary" onclick="location.href='{% url 'menu_update' restaurant_id=restaurant.id pk=menu.pk %}'">編集</button>
                 <form action="{% url 'menu_delete' restaurant_id=restaurant.id pk=menu.pk %}" method="post" style="display:inline;">

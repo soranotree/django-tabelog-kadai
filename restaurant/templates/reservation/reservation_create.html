@@ -125,6 +125,7 @@
                 <tr>
                   <th class="col-menu-name">メニュー名</th>
                   <th class="col-menu-description">内容</th>
+                  <th class="col-menu-photo">写真</th>
                   <th class="col-menu-price">価格</th>
                   <th class="col-menu-select">選択</th>
                 </tr>
@@ -132,6 +133,15 @@
                 <tr>
                   <td class="col-menu-name">{{ menu.name }}</td>
                   <td class="col-menu-description">{{ menu.description }}</td>
+                  <td class="col-menu-photo">
+                    {% if menu.photo %}
+                        <img src="{{ menu.photo.url }}" alt="Menu Photo" style="width: 100px; height: auto;">
+                        <br>
+                        <a href="{{ menu.photo.url }}" target="_blank">写真へのリンク
+                        </a>
+                    {% else %}
+                    {% endif %}
+                  </td>
                   <td class="col-menu-price">
                     {% if menu.price %}{{ menu.price }}円{% endif %}
                   </td>
