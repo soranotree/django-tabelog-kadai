@@ -47,7 +47,11 @@
             {% for favorite in object_list %}
             <tr>
               <td class="col-review-shopname">
+                {% if favorite.restaurant %}
                 <a href="{% url 'restaurant_detail' favorite.restaurant.id %}">{{ favorite.restaurant.shop_name }}</a>
+                {% else %}
+                <span>レストラン情報が見つかりません</span>
+                {% endif %}
               </td>
               <td class="col-review-zip" style="text-align: center;">{{ favorite.restaurant.zip_code }}</td>
               <td class="col-review-address">{{ favorite.restaurant.address }}</td>
@@ -55,8 +59,8 @@
                 <a href="#" class="link-secondary" data-bs-toggle="modal" data-bs-target="#removeFavoriteModal" data-favorite-id="{{ favorite.id }}" data-restaurant-name=" {{ favorite.restaurant.name }}">解除</a>
               </td>
             </tr>
+            {% endfor %}
           </tbody>
-          {% endfor %}
         </table>
         <div class="d-flex justify-content-center">
         </div>
