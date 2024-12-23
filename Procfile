@@ -1,1 +1,1 @@
-web: gunicorn --workers=1 chatbot.wsgi --timeout 300 --log-file -
+web: gunicorn --workers=1 nagoyameshi.wsgi --timeout 300 --log-file -
