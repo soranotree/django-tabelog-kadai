@@ -197,7 +197,7 @@ STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY")
 ENVIRONMENT = os.getenv('DJANGO_ENV', 'development')
 
 if ENVIRONMENT == 'production':
-    YOUR_DOMAIN = "https://nagoyameshi-tg-nakano-7d00b1c6bd02.herokuapp.com/"
+    YOUR_DOMAIN = "https://nagoyameshi-tg-nakano-7d00b1c6bd02.herokuapp.com"
 else:
     YOUR_DOMAIN = "http://127.0.0.1:8000"
 
