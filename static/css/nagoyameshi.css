@@ -32,6 +32,8 @@ footer {
 }
 
 .footer-link {
+  display: flex;
+  justify-content: center;
   margin-left: 30px;
   margin-top: 5px;
   margin-bottom: 30px;
@@ -223,7 +225,6 @@ a {
 }
 
 @media screen and (min-width: 1400px) {
-
   .nagoyameshi-container {
     max-width: 1200px;
     /* max-width: 80%;  */
@@ -237,7 +238,35 @@ a {
   .admin-content {
     margin: 0;
   }
-}
+  .catchphrase-heading {
+    font-size: 24px;
+    line-height: 1.5;
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 600;
+    text-shadow: 0.25rem 0.25rem 1rem rgb(0 0 0 / 60%);
+  }
+  .catchphrase-paragraph {
+    font-size: 14px;
+    line-height: 2;
+    font-family: 'Noto Serif JP', serif;
+    font-weight: 400;
+    text-align: left;
+    text-shadow: 0.25rem 0.25rem 1rem rgb(0 0 0 / 60%);
+  }
+  .overlay-text {
+    padding: 0 30px;
+  }
+  .footer-logo {
+    flex-direction: column;
+    align-items: center;
+  }
+  .footer-link {
+    flex-direction: column; /* リンクを縦並びに */
+    align-items: center;
+  }
+  .footer-link a {
+    margin-bottom: 5px; /* リンク間の余白 */
+  }}
 
 /* flatpickr の土曜日の色 */
 .flatpickr-weekday:nth-child(7),
@@ -476,8 +505,6 @@ th-child(7n + 1) {
   width: 20%;
   /* text-align: center; */
 }
-
-
 
 .col-rl3-owner .col-rl3-shop_rep {
   width: 17%;
