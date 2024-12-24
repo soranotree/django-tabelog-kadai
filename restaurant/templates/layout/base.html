@@ -53,9 +53,9 @@
               <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre> {{ user.user_name }} 様 </a>
               <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">      
                 <a class="dropdown-item" {#TODO:1#} href="{% url 'user_detail' user.id %}">会員情報</a>
-                <a class="dropdown-item" {#TODO:2#} href="{% url 'reservation_list' %}">予約一覧</a>
+                <a class="dropdown-item" {#TODO:2#} href="{% url 'reservation_list' %}">予約確認</a>
                 <a class="dropdown-item" {#TODO:3#} href="{% url 'favorite_list' %}">お気に入り一覧</a>
-                {% comment %} <a class="dropdown-item" {#TODO:4#} href="{% url 'subscribe_payment' %}">お支払い方法</a> {% endcomment %}
+                <a class="dropdown-item" {#TODO:4#} href="{% url 'subscribe_payment' %}">お支払い方法</a>
                 <a class="dropdown-item" {#TODO:5#} href="{% url 'subscribe_cancel' %}">有料プラン解約</a>
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="{% url 'account_logout' %}">ログアウト</a>
@@ -97,7 +97,7 @@
                 <a class="dropdown-item" href="{% url 'user_detail' user.id %}">会員情報</a>
                 <a class="dropdown-item" href="{% url 'restaurant_list_2' user.id %}">店舗管理</a>
                 <a class="dropdown-item" href="{% url 'subscribe_cancel' %}">解約</a>
-                {% comment %} <a class="dropdown-item" href="{% url 'subscribe_payment' %}">お支払い方法</a> {% endcomment %}
+                <a class="dropdown-item" href="{% url 'subscribe_payment' %}">お支払い方法</a>
                 <div class="dropdown-divider"></div>
                 <a class="dropdown-item" href="{% url 'account_logout' %}">ログアウト</a>
               </div>
@@ -179,7 +179,7 @@
           </a>
         </div>
         <div class="d-flex justify-content-center footer-link">
-          <a href="{% url 'company_page' %}" class="link-secondary me-3">会社概要</a>
+          <a href="{% url 'company_page' %}" class="link-secondary me-3">会社概要　　</a>
           <a href="{% url 'terms_page' %}" class="link-secondary">利用規約</a>
         </div>
         <div class="d-flex justify-content-center">

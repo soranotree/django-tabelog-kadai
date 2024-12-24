@@ -250,19 +250,19 @@ class SubscribeCancelErrorView(generic.TemplateView):
 class SubscriptionCancelView(generic.TemplateView):
     template_name = "subscribe/subscription_cancel.html"
 
-# セキュリティの観点からアプリでは保存しない。すべてStripeで入力するようにする。
-# class SubscribePaymentView(View):
-#   template = 'subscribe/subscribe_payment.html'
-#   def get(self, request):
-#     user_id = request.user.id
-#     user = models.CustomUser.objects.get(id=user_id)
-#     context = {'user': user}
-#     return render(self.request, self.template, context)
-#   def post(self, request):
-#     user_id = request.user.id
-#     card_name = request.POST.get('card_name')
-#     card_number = request.POST.get('card_number')
-#     expiry = request.POST.get('expiry')
-#     print(card_name, card_number, expiry)
-#     models.CustomUser.objects.filter(id=user_id).update(card_name=card_name, card_number=card_number, expiry=expiry)
-#     return redirect(reverse_lazy('top_page'))
+# セキュリティの観点からアプリでは保存しない。すべてStripeで入力⇒課題必須項目なので復活
+class SubscribePaymentView(View):
+  template = 'subscribe/subscribe_payment.html'
+  def get(self, request):
+    user_id = request.user.id
+    user = models.CustomUser.objects.get(id=user_id)
+    context = {'user': user}
+    return render(self.request, self.template, context)
+  def post(self, request):
+    user_id = request.user.id
+    card_name = request.POST.get('card_name')
+    card_number = request.POST.get('card_number')
+    expiry = request.POST.get('expiry')
+    print(card_name, card_number, expiry)
+    models.CustomUser.objects.filter(id=user_id).update(card_name=card_name, card_number=card_number, expiry=expiry)
+    return redirect(reverse_lazy('top_page'))

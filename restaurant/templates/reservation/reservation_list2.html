@@ -15,24 +15,20 @@
           </ol>
         </nav>
 
-
-        {% if messages %}
+        {% comment %} ログイン情報等も表示されるのでコメントアウト {% endcomment %}
+        {% comment %} {% if messages %}
         <div class="alert alert-success">
           {% for message in messages %}
           {{ message }}
           {% endfor %}
         </div>
-        {% endif %}
+        {% endif %} {% endcomment %}
 
         <style>
-          .booked { background-color: pink; }
-          .available { background-color: lightgreen; }
-          .empty { background-color: lightgray; }
           table { border-collapse: collapse; width: 100%; }
           th, td { border: 1px solid black; padding: 8px; text-align: center; }
         </style>
   
-
         <h1 class="mb-3 text-center">予約の確認</h1>
         <h2 class="mb-3 text-center">{{ restaurant.shop_name }}</h2>
         <a href="{% url 'restaurant_list_2' user.id %}">戻る</a><br>
