@@ -16,6 +16,9 @@ from django.utils import timezone
 from django.utils.timezone import now
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
+import markdown
+from django.conf import settings
+import os
 
 from . import models
 from . import forms
@@ -1530,3 +1533,18 @@ class CategoryDeleteView3(SuperuserRequiredMixin, generic.DeleteView):
     template_name = 'category/category_confirm_delete.html'
     success_url = reverse_lazy('category_list_3')
 
+""" README.mdの表示 ================================== """
+def readme_view(request):
+    # Markdownファイルのパスを取得
+    markdown_file_path = os.path.join(settings.BASE_DIR, 'docs/README.md')
+
+    # ファイルを読み込む
+    with open(markdown_file_path, 'r', encoding='utf-8') as file:
+        markdown_content = file.read()
+
+    # MarkdownをHTMLに変換
+    html_content = markdown.markdown(markdown_content)
+
+    # テンプレートに渡す
+    context = {'html_content': html_content}
+    return render(request, 'readme.html', context)

@@ -1,0 +1,20 @@
+{% extends "layout/base.html" %}
+{% load static %}
+{% block title %}NAGOYAMESHI{% endblock %}
+{% block content %}
+
+<body>
+  <div class="container nagoyameshi-container">
+    <main>
+      <br>
+      <div class="manual-content">
+        {{ html_content|safe }}
+      </div>
+    </main>
+    <footer>
+      <a href="{% url 'top_page' %}">トップページに戻る</a>
+    </footer>
+  </div>
+</body>
+</html>
+{% endblock %}

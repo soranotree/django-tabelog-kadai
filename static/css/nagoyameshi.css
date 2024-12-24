@@ -8,7 +8,7 @@
 .nagoyameshi-logo {
   height: 32px;
   margin-bottom: 20px;
-  transform: scale(1.05);
+  transform: scale(1.15);
 }
 
 .app-name {
@@ -19,30 +19,32 @@
 
 footer {
   width: 100%;
-  height: 120px;
-  /* height: 240px; */
+  /* height: 120px; */
+  height: 240px;
   position: absolute;
   bottom: 0;
   padding: 50px 15px;
 }
 
 .footer-logo {
-  margin-right: 30px;
-  margin-bottom: 20px;
+  transform: scale(1.0);
+  margin: 0px 0px 0px 30px;
+  /* margin-right: 30px;
+  margin-bottom: 20px; */
 }
 
 .footer-link {
-  display: flex;
-  justify-content: center;
+  /* display: flex;
+  justify-content: center; */
   margin-left: 30px;
   margin-top: 5px;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
 }
 
 .footer-copyright {
   margin-left: 30px;
   margin-top: 5px;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
 }
 
 
@@ -256,17 +258,13 @@ a {
   .overlay-text {
     padding: 0 30px;
   }
-  .footer-logo {
-    flex-direction: column;
-    align-items: center;
-  }
-  .footer-link {
-    flex-direction: column; /* リンクを縦並びに */
-    align-items: center;
-  }
   .footer-link a {
-    margin-bottom: 5px; /* リンク間の余白 */
-  }}
+    font-size: 0.875rem; /* フォントを小さく */
+  }
+  .footer-copyright {
+    font-size: 0.75rem; /* 著作権のテキストも小さく */
+  }
+}
 
 /* flatpickr の土曜日の色 */
 .flatpickr-weekday:nth-child(7),
