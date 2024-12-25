@@ -63,6 +63,11 @@ h3 {
   font-size: 1.125rem;
 }
 
+h4 {
+  font-size: 1.000rem;
+}
+
+
 .admin-search-box {
   max-width: 240px;
 }
@@ -529,6 +534,7 @@ th-child(7n + 1) {
 
 .flicker-link {
   display: inline-block;
+  font-size: 22px;
   color: #FF6666; /* リンクの色 */
   text-decoration: none;
   font-weight: bold;
@@ -539,3 +545,5 @@ th-child(7n + 1) {
   0%, 100% { opacity: 1; } /* 完全に表示 */
   50% { opacity: 0; } /* 消える */
 }
+
+

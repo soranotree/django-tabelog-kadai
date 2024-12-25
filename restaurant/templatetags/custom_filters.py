@@ -1,8 +1,10 @@
-from django import template
-from django.utils.formats import number_format
 from datetime import timedelta
 
+from django import template
+from django.utils.formats import number_format
+
 register = template.Library()
+
 
 @register.filter
 def rate_star(rate):
@@ -11,6 +13,7 @@ def rate_star(rate):
     if average_rate % 1 == 0:
         return int(average_rate)
     return average_rate
+
 
 @register.filter
 def int_with_commas(value):
@@ -21,17 +24,23 @@ def int_with_commas(value):
         return value  # Return the original value if conversion fails
     return value
 
+
 @register.filter
 def get_days_until(start_date, end_date):
-    return [start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)]
+    return [
+        start_date + timedelta(days=i) for i in range((end_date - start_date).days + 1)
+    ]
+
 
 @register.filter
 def date_add(date_obj, days):
     return date_obj + timedelta(days=days)
 
+
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key, None)
+
 
 @register.filter
 def get_reservation(reservations, date_time):

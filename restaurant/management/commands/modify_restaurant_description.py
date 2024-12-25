@@ -1,17 +1,24 @@
-from django.core.management.base import BaseCommand
 import random
+from django.core.management.base import BaseCommand
 from restaurant.models import Restaurant
-from datetime import time
 
 
 class Command(BaseCommand):
-    help = 'Modify '
+    help = "Modify "
 
     def handle(self, *args, **kwargs):
         # Define the choices
-        A_part = ['なら当店へ！', 'の新コンセプト。', 'の老舗。', 'をお探しなら。']
-        B_part = ['癒しの時間をご提供いたします。', 'お一人でもお仲間とでも！', 'どんなシーンでもお任せください！']
-        C_part = ['スタッフ一同、お待ち申し上げております。', '心のこもったおもてなしをご堪能下さい。', 'ゆっくりとお寛ぎください。']
+        A_part = ["なら当店へ！", "の新コンセプト。", "の老舗。", "をお探しなら。"]
+        B_part = [
+            "癒しの時間をご提供いたします。",
+            "お一人でもお仲間とでも！",
+            "どんなシーンでもお任せください！",
+        ]
+        C_part = [
+            "スタッフ一同、お待ち申し上げております。",
+            "心のこもったおもてなしをご堪能下さい。",
+            "ゆっくりとお寛ぎください。",
+        ]
         # Query to get all records with id > 10
         restaurants = Restaurant.objects.filter(id__gt=10)
         for restaurant in restaurants:

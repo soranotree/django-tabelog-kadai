@@ -11,8 +11,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
-import environ
 from pathlib import Path
+
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -47,7 +48,7 @@ INSTALLED_APPS = [
     # my apps
     "restaurant",
     "accounts",
-    'bootstrapform',
+    "bootstrapform",
     # allauth
     "django.contrib.sites",
     "allauth",
@@ -58,7 +59,7 @@ INSTALLED_APPS = [
 ]
 
 if DEBUG:
-    INSTALLED_APPS += ['debug_toolbar']
+    INSTALLED_APPS += ["debug_toolbar"]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -73,11 +74,11 @@ MIDDLEWARE = [
 ]
 
 if DEBUG:
-    MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware']
-    INTERNAL_IPS = ['127.0.0.1']
+    MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
+    INTERNAL_IPS = ["127.0.0.1"]
 
     DEBUG_TOOLBAR_CONFIG = {
-        "SHOW_TOOLBAR_CALLBACK" : lambda request: True,
+        "SHOW_TOOLBAR_CALLBACK": lambda request: True,
     }
 
 ROOT_URLCONF = "nagoyameshi.urls"
@@ -145,35 +146,35 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # allauth
-AUTH_USER_MODEL = 'accounts.CustomUser'
+AUTH_USER_MODEL = "accounts.CustomUser"
 SITE_ID = 1
 AUTHENTICATION_BACKENDS = (
-    'allauth.account.auth_backends.AuthenticationBackend', # 一般ユーザー用(メールアドレス認証)
-    'django.contrib.auth.backends.ModelBackend', # 管理サイト用(ユーザー名認証)
-    )
- 
+    "allauth.account.auth_backends.AuthenticationBackend",  # 一般ユーザー用(メールアドレス認証)
+    "django.contrib.auth.backends.ModelBackend",  # 管理サイト用(ユーザー名認証)
+)
+
 # メールアドレス認証に変更する設定
-ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_USERNAME_REQUIRED = False
 # サインアップにメールアドレス確認を行わない設定
-ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_EMAIL_REQUIRED = True
 # ChatGPT指示20241130
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False
 # ChatGPT指示20241127
-LOGIN_URL = 'login'
+LOGIN_URL = "login"
 # ログイン/ログアウト後の遷移先を設定
-LOGIN_REDIRECT_URL = 'top_page'
-ACCOUNT_LOGOUT_REDIRECT_URL = 'top_page'
+LOGIN_REDIRECT_URL = "top_page"
+ACCOUNT_LOGOUT_REDIRECT_URL = "top_page"
 # ログアウトリンクのクリック一発でログアウトする設定
 ACCOUNT_LOGOUT_ON_GET = True
 # allauth アダプタ
-ACCOUNT_ADAPTER = 'accounts.adapter.AccountAdapter'
+ACCOUNT_ADAPTER = "accounts.adapter.AccountAdapter"
 # ログインフォームのカスタム用設定
 ACCOUNT_FORMS = {
-    'login': 'accounts.forms.MyLoginForm',
-    'signup': 'accounts.forms.MySignupForm',
-    }
+    "login": "accounts.forms.MyLoginForm",
+    "signup": "accounts.forms.MySignupForm",
+}
 
 # Initialize environment variables
 env = environ.Env()
@@ -181,7 +182,9 @@ env = environ.Env()
 environ.Env.read_env(BASE_DIR / ".env")  # Explicitly point to the .env file
 
 # メール設定
-EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend")
+EMAIL_BACKEND = env(
+    "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
+)
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.example.com")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)  # Type-casting for integer
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)  # Type-casting for boolean
@@ -194,9 +197,9 @@ STRIPE_PUBLISHABLE_KEY = env("STRIPE_PUBLISHABLE_KEY")
 
 # YOUR_DOMAINが開発環境と本番環境で変わるように記述
 # Detect the environment
-ENVIRONMENT = os.getenv('DJANGO_ENV', 'development')
+ENVIRONMENT = os.getenv("DJANGO_ENV", "development")
 
-if ENVIRONMENT == 'production':
+if ENVIRONMENT == "production":
     YOUR_DOMAIN = "https://nagoyameshi-tg-nakano-7d00b1c6bd02.herokuapp.com"
 else:
     YOUR_DOMAIN = "http://127.0.0.1:8000"
@@ -205,8 +208,12 @@ else:
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
-AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", default="us-east-1")  # リージョンのデフォルト設定
-AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+AWS_S3_REGION_NAME = env(
+    "AWS_S3_REGION_NAME", default="us-east-1"
+)  # リージョンのデフォルト設定
+AWS_S3_CUSTOM_DOMAIN = (
+    f"{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com"
+)
 
 # メディアファイルの設定
 
@@ -219,7 +226,7 @@ STATIC_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/static/"
 STATICFILES_STORAGE = "storages.backends.s3boto3.S3StaticStorage"
 
 # 開発環境でもS3を使うために静的ファイルの設定をコメントアウト
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),) # S3使用前
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)  # S3使用前
 
 # メディアファイルの設定
 # MEDIA_URL = "media/"  # S3使用前

@@ -1,11 +1,11 @@
+import random
+from django.contrib.auth.hashers import make_password
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now
-from accounts.models import CustomUser
-from random import randint
-import random
-import numpy as np
 from faker import Faker
-from django.contrib.auth.hashers import make_password
+
+from accounts.models import CustomUser
+
 
 class Command(BaseCommand):
     # python manage.py help <カスタムコマンド名> を実行すると表示されるメッセージ
@@ -16,11 +16,13 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **kwargs):
-        fake = Faker('ja_JP')
+        fake = Faker("ja_JP")
 
         for _ in range(50):
             account_type = random.choice([1, 2])  # Randomly select an account type
-            is_subscribed = random.choice([True, False])  # Randomly decide if the user is subscribed or not
+            is_subscribed = random.choice(
+                [True, False]
+            )  # Randomly decide if the user is subscribed or not
             card_number = fake.credit_card_number() if is_subscribed else None
 
             # Create a new CustomUser instance with random data
@@ -40,6 +42,8 @@ class Command(BaseCommand):
                 is_active=True,
                 date_joined=fake.date_this_decade(before_today=True, after_today=False),
                 created_at=now(),  # Use now() for timestamp fields
-                updated_at=now()
+                updated_at=now(),
             )
-            self.stdout.write(self.style.SUCCESS(f'Successfully created user {user.username}'))
+            self.stdout.write(
+                self.style.SUCCESS(f"Successfully created user {user.username}")
+            )

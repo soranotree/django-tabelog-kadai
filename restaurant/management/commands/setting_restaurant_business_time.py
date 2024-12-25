@@ -1,9 +1,12 @@
-from django.core.management.base import BaseCommand
-from restaurant.models import Restaurant
 import random
 
+from django.core.management.base import BaseCommand
+
+from restaurant.models import Restaurant
+
+
 class Command(BaseCommand):
-    help = 'Update the business_time for all restaurants'
+    help = "Update the business_time for all restaurants"
 
     def handle(self, *args, **kwargs):
         # Possible start and end times
@@ -14,7 +17,7 @@ class Command(BaseCommand):
         restaurants = Restaurant.objects.all()
 
         if not restaurants.exists():
-            self.stdout.write(self.style.ERROR('No restaurants found.'))
+            self.stdout.write(self.style.ERROR("No restaurants found."))
             return
 
         for restaurant in restaurants:
@@ -26,6 +29,10 @@ class Command(BaseCommand):
             restaurant.business_time = f"{start_time}～{end_time}"
             restaurant.save()
 
-            self.stdout.write(self.style.SUCCESS(f'Updated {restaurant.shop_name} to {start_time}～{end_time}'))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Updated {restaurant.shop_name} to {start_time}～{end_time}"
+                )
+            )
 
-        self.stdout.write(self.style.SUCCESS('Business time update completed!'))
+        self.stdout.write(self.style.SUCCESS("Business time update completed!"))

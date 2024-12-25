@@ -1,16 +1,31 @@
 import random
-from restaurant.models import Menu
 from datetime import time
 
+from restaurant.models import Menu
+
 # Define the A and B choices based on the criteria
-A_before_18 = ['日替わり', 'うどん', 'そば', 'ラーメン', 'パンケーキ', 'ランチ']
-B_before_18 = ['定食', 'セット']
+A_before_18 = ["日替わり", "うどん", "そば", "ラーメン", "パンケーキ", "ランチ"]
+B_before_18 = ["定食", "セット"]
 
-A_after_17_30 = ['ステーキ', 'しゃぶしゃぶ', '鍋', '刺身', 'ハンバーグ', 'フレンチ', 'イタリアン', 'ブイヤベース', 'うなぎ', 'ラム', '和牛', 'ソーセージ', 'バーベキュー']
-B_after_17_30 = ['セット', 'コース', '御膳', 'フルコース']
+A_after_17_30 = [
+    "ステーキ",
+    "しゃぶしゃぶ",
+    "鍋",
+    "刺身",
+    "ハンバーグ",
+    "フレンチ",
+    "イタリアン",
+    "ブイヤベース",
+    "うなぎ",
+    "ラム",
+    "和牛",
+    "ソーセージ",
+    "バーベキュー",
+]
+B_after_17_30 = ["セット", "コース", "御膳", "フルコース"]
 
-A_others = ['カレー', 'パンケーキ', 'ショートケーキ', 'ポップコーン', 'おつまみ']
-B_others = ['単品']
+A_others = ["カレー", "パンケーキ", "ショートケーキ", "ポップコーン", "おつまみ"]
+B_others = ["単品"]
 
 # Query to get all Menu records with id > 14
 menus = Menu.objects.filter(id__gt=14)
@@ -25,11 +40,11 @@ for menu in menus:
     else:
         # For all other records
         new_name = f"{random.choice(A_others)}{random.choice(B_others)}"
-    
+
     # Update name and description
     menu.name = new_name
     menu.description = f"{new_name}をお楽しみください。"
-    
+
     # Save the changes
     menu.save()
 

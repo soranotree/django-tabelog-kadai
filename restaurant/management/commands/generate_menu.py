@@ -1,18 +1,21 @@
-from django.core.management.base import BaseCommand
-from faker import Faker
-from restaurant.models import Restaurant, Menu
 from datetime import datetime
 
-fake = Faker('ja_JP')
+from django.core.management.base import BaseCommand
+from faker import Faker
+
+from restaurant.models import Menu, Restaurant
+
+fake = Faker("ja_JP")
+
 
 class Command(BaseCommand):
-    help = 'Generate random menus for restaurants'
+    help = "Generate random menus for restaurants"
 
     def handle(self, *args, **kwargs):
         restaurants = Restaurant.objects.all()
 
         if not restaurants.exists():
-            self.stdout.write(self.style.ERROR('No restaurants found.'))
+            self.stdout.write(self.style.ERROR("No restaurants found."))
             return
 
         for restaurant in restaurants:
@@ -27,7 +30,9 @@ class Command(BaseCommand):
                     restaurant=restaurant,
                     name=fake.word() + " 特選セット",
                     description=f"{restaurant.shop_name}の創業の精神が宿る、渾身の一品",
-                    price=fake.random_element([600, 700, 800, 850, 900, 950, 1000, 1100, 1200]),
+                    price=fake.random_element(
+                        [600, 700, 800, 850, 900, 950, 1000, 1100, 1200]
+                    ),
                     available_from=datetime.strptime(business_start, "%H:%M").time(),
                     available_end=datetime.strptime(business_end, "%H:%M").time(),
                 )
@@ -37,7 +42,9 @@ class Command(BaseCommand):
                     restaurant=restaurant,
                     name=fake.word() + " 自信の一品",
                     description=f"{restaurant.shop_name}自信の一品です",
-                    price=fake.random_element([600, 700, 800, 850, 900, 950, 1000, 1100, 1200]),
+                    price=fake.random_element(
+                        [600, 700, 800, 850, 900, 950, 1000, 1100, 1200]
+                    ),
                     available_from=datetime.strptime(business_start, "%H:%M").time(),
                     available_end=datetime.strptime(business_end, "%H:%M").time(),
                 )
@@ -77,11 +84,17 @@ class Command(BaseCommand):
                     restaurant=restaurant,
                     name=fake.word() + " フルコース料理",
                     description=f"本場で15年間修業したシェフお勧めの豪華フルコース",
-                    price=fake.random_element([10000, 12000, 13000, 14000, 15000, 20000]),
+                    price=fake.random_element(
+                        [10000, 12000, 13000, 14000, 15000, 20000]
+                    ),
                     available_from=datetime.strptime("18:00", "%H:%M").time(),
                     available_end=datetime.strptime(business_end, "%H:%M").time(),
                 )
 
-                self.stdout.write(self.style.SUCCESS(f'Successfully created menus for {restaurant.shop_name}'))
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"Successfully created menus for {restaurant.shop_name}"
+                    )
+                )
 
-        self.stdout.write(self.style.SUCCESS('Menu generation completed!'))
+        self.stdout.write(self.style.SUCCESS("Menu generation completed!"))
