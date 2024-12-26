@@ -266,4 +266,4 @@ class SubscribePaymentView(View):
         models.CustomUser.objects.filter(id=user_id).update(
             card_name=card_name, card_number=card_number, expiry=expiry
         )
-        return redirect(reverse_lazy("top_page"))
+        return redirect(reverse_lazy("subscribe_payment"))

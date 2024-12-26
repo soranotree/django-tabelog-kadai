@@ -105,7 +105,7 @@
                 </tr>
                 {% for slot in available_slots %}
                 <tr>
-                  <td class="col-table-type">{{ slot.dining_table.name_for_internal }}：{{ slot.dining_table.name_for_customer }}</td>
+                  <td class="col-table-type">{{ slot.dining_table.name_for_customer }}</td>
                   {% comment %} <td class="col-table-type">{{ slot.dining_table.name_for_internal }}：{{ slot.dining_table.name_for_customer }}</td> {% endcomment %}
                   <td class="col-table-people">{{ slot.dining_table.min_people }}名</td>
                   <td class="col-table-people">{{ slot.dining_table.max_people }}名</td>
@@ -154,14 +154,11 @@
               </table>
 
               <div class="form-group mb-4" style="text-align: center;">
-              {% comment %} <div class="form-group d-flex justify-content-center mb-4"> {% endcomment %}
               <!-- 人数の隠しフィールド -->
                 <input type="hidden" name="number_of_people" value="{{ number_of_people }}">
                 <br>
                 <button type="submit" class="btn btn-primary text-white shadow-sm">上記の内容で予約する</button>
-                {% comment %} <button type="submit">以上の内容で予約する</button> {% endcomment %}
               </div>
-
             </form>
           
       {% else %}

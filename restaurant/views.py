@@ -192,7 +192,7 @@ class RestaurantDetailView(generic.DetailView):
 class RestaurantListView(generic.ListView):
     template_name = "restaurant_list.html"
     model = models.Restaurant
-    paginate_by = 5
+    paginate_by = 10
 
     def get_context_data(self, **kwargs):
         context = super(RestaurantListView, self).get_context_data(**kwargs)
@@ -456,13 +456,6 @@ class ReservationCreateView(SubscriptionRequiredMixin, generic.CreateView):
             dep_reservation.customer = user_instance
             dep_reservation.save()
 
-        # 予約数の更新
-        # 使用先はレストランリスト（一般＆店舗）のみ→DB書き込みではなく式で対応するよう変更
-        # restaurant = reservation_to_book.restaurant
-        # booked_count = models.Reservation.objects.filter(restaurant=restaurant, is_booked=True, is_dependent=False).count()
-        # restaurant.reservation_num = booked_count
-        # restaurant.save()
-
         messages.success(self.request, "予約が完了しました。")
 
         return redirect(self.success_url)
@@ -482,10 +475,6 @@ class ReservationListView(SubscriptionRequiredMixin, generic.ListView):
             return redirect(reverse_lazy("top_page"))
         if user.is_authenticated and user.is_subscribed and user.account_type == 1:
             return super().get(request, **kwargs)
-        # if user.is_authenticated and not user.is_subscribed:
-        #   return redirect(reverse_lazy('subscribe_register'))
-        # if not user.is_authenticated:
-        #   return redirect(reverse_lazy('account_login'))
 
     def get_queryset(self):
         queryset = models.Reservation.objects.filter(
@@ -838,32 +827,6 @@ class RestaurantUpdateView(generic.UpdateView):
     def get_success_url(self):
         return reverse_lazy("restaurant_list_2", kwargs={"pk": self.request.user.id})
 
-
-""" レストランの削除 ================================== """
-# def review_delete(request):
-#   pk = request.GET.get('pk')
-#   is_success = True
-#   if pk:
-#     try:
-#       review = get_object_or_404(models.Review, id=pk)
-#       restaurant = review.restaurant
-#       review.delete()
-#       # Update the review_num
-#       restaurant.review_num = models.Review.objects.filter(restaurant=restaurant).count()
-#       # Update the restaurant's rate field
-#       average_rate = models.Review.objects.filter(restaurant=restaurant).aggregate(Avg('rate'))['rate__avg']
-#       if average_rate is not None:
-#         average_rate = round(average_rate, 2)
-#         restaurant.rate = average_rate
-#       else:
-#         restaurant.rate = None
-#       restaurant.save()
-#     except:
-#       is_success = False
-#   else:
-#     is_success = False
-
-#   return JsonResponse({'is_success': is_success})
 
 """ ダイニングテーブル一覧 ================================== """
 
@@ -1485,7 +1448,6 @@ class ReservationSlotCreateView(View):
             f"{created_slots_count}件の予約枠が作成されました。{updated_slots_count}件の予約枠が更新されました。",
         )
         return redirect("reservation_management", restaurant_id=restaurant.id)
-
 
 
 

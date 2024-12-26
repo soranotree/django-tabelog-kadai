@@ -59,7 +59,6 @@
             </div>
             <div class="mb-3">
               <label for="description" class="form-label text-md-left fw-bold">店舗説明</label>
-              {% comment %} <label for="description" class="form-label">店舗説明</label> {% endcomment %}
               {{ form.description }}
             </div>
             <div class="mb-3">
@@ -69,6 +68,10 @@
             <div class="mb-3">
               <label for="close_day_of_week" class="form-label fw-bold">定休日　</label>
               {{ form.close_day_of_week }}
+            </div>
+            <div class="mb-3">
+              <label for="photo" class="form-label fw-bold">写真</label>
+              {{ form.photo }}
             </div>
             <div class="mb-3">
               <a href="{% url 'restaurant_list_2' user.id %}">戻る</a>
