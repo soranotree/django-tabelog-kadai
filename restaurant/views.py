@@ -339,117 +339,132 @@ def favorite_delete(request):
 class ReservationCreateView(SubscriptionRequiredMixin, generic.CreateView):
     template_name = "reservation/reservation_create.html"
     model = models.Reservation
-    fields = []  # フォームは後で動的に生成します
+    fields = []
     success_url = reverse_lazy("reservation_list")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         restaurant = get_object_or_404(models.Restaurant, id=self.kwargs["pk"])
         context["restaurant"] = restaurant
-        context["hours"] = range(9, 23)  # 予約時間リスト作成
+        context["hours"] = range(9, 23)
 
-        # 予約条件を取得
-        reservation_date = self.request.GET.get("date")  # フロントからの取得
-        reservation_time = self.request.GET.get("time")  # フロントからの取得
-        number_of_people = self.request.GET.get(
-            "number_of_people"
-        )  # フロントからの取得
+        reservation_date = self.request.GET.get("date")
+        reservation_time = self.request.GET.get("time")
+        number_of_people = self.request.GET.get("number_of_people")
 
-        # 予約可能なスロットを取得
         if reservation_date and reservation_time and number_of_people:
             reservation_time_obj = datetime.strptime(reservation_time, "%H:%M").time()
 
-            # 同じテーブルの予約が持つ予約時間を確認
-            potential_slots = models.Reservation.objects.filter(
-                is_booked=False,
+            all_slots = models.Reservation.objects.filter(
                 restaurant=restaurant,
                 date=reservation_date,
-                time_start=reservation_time,
                 duration_min__gt=0,
+            )
+
+            potential_slots = all_slots.filter(
+                is_booked=False,
+                time_start=reservation_time,
                 dining_table__min_people__lte=number_of_people,
                 dining_table__max_people__gte=number_of_people,
             )
 
             valid_slots = []
             for slot in potential_slots:
-                # 現在のスロットの終了時間を計算
-                slot_end_time = (
-                    datetime.combine(datetime.today(), slot.time_start)
-                    + timedelta(minutes=slot.duration_min)
-                ).time()
+                slot_end_time = (datetime.combine(datetime.today(), slot.time_start) + timedelta(minutes=slot.duration_min)).time()
 
-                # 同じテーブルで重複する予約があるか確認
                 conflicting_reservations = models.Reservation.objects.filter(
-                    dining_table=slot.dining_table,  # 同じテーブル
+                    dining_table=slot.dining_table,
                     date=reservation_date,
                     is_booked=True,
-                    time_start__lt=slot_end_time,  # 終了時間前に始まる
-                    time_start__gt=slot.time_start,  # スロットの開始時間以降
+                    time_start__lt=slot_end_time,
+                    time_start__gt=slot.time_start,
                 )
 
                 if not conflicting_reservations.exists():
                     valid_slots.append(slot)
 
-            context["available_slots"] = valid_slots  # コンテキストに追加
-            context["reservation_date"] = reservation_date  # コンテキストに追加
-            context["reservation_time"] = reservation_time  # コンテキストに追加
-            context["number_of_people"] = number_of_people  # コンテキストに追加
+            other_time_slots = []
+            start_time = datetime.combine(datetime.today(), datetime.strptime("09:00", "%H:%M").time())
+            end_time = datetime.combine(datetime.today(), datetime.strptime("22:30", "%H:%M").time())
+            time_interval = timedelta(minutes=30)
 
-            # 提供可能なメニューの取得
+            current_time = start_time
+            while current_time <= end_time:
+                current_time_str = current_time.time().strftime("%H:%M")
+                if current_time_str != reservation_time:
+                    potential_slots = all_slots.filter(
+                        is_booked=False,
+                        time_start=current_time.time(),
+                        dining_table__min_people__lte=number_of_people,
+                        dining_table__max_people__gte=number_of_people,
+                    )
+
+                    for slot in potential_slots:
+                        slot_end_time = (datetime.combine(datetime.today(), slot.time_start) + timedelta(minutes=slot.duration_min)).time()
+
+                        conflicting_reservations = models.Reservation.objects.filter(
+                            dining_table=slot.dining_table,
+                            date=reservation_date,
+                            is_booked=True,
+                            time_start__lt=slot_end_time,
+                            time_start__gt=slot.time_start,
+                        )
+
+                        if not conflicting_reservations.exists():
+                            other_time_slots.append(current_time.time())
+                            break
+
+                current_time += time_interval
+
+            unique_other_time_slots = sorted(set(other_time_slots))
+
+            context["available_slots"] = valid_slots
+            context["reservation_date"] = reservation_date
+            context["reservation_time"] = reservation_time
+            context["number_of_people"] = number_of_people
+            context["other_time_slots"] = unique_other_time_slots
+            context["all_slots_exist"] = all_slots.exists()
+
             menus = models.Menu.objects.filter(
                 restaurant=restaurant,
                 available_from__lte=reservation_time_obj,
                 available_end__gte=reservation_time_obj,
             ).order_by("price")
-            context["menus"] = menus  # コンテキストに追加
+            context["menus"] = menus
 
-        # 検索窓のデフォルト値設定＆直前検索データ維持用
         today = datetime.now().date()
         tomorrow = today + timedelta(days=1)
         context["tomorrow"] = tomorrow.strftime("%Y-%m-%d")
-        context["people_range"] = range(1, 13)  # 1人から12人までのリストを作成
-        context["default_time"] = (
-            reservation_time if reservation_time else f"{context['hours'].start}:00"
-        )
+        context["people_range"] = range(1, 13)
+        context["default_time"] = reservation_time if reservation_time else f"{context['hours'].start}:00"
 
         return context
 
     def form_valid(self, form):
-        # POSTデータから予約する予約レコードのIDを取得
         reservation_id = self.request.POST.get("reservation_id")
-
-        # その予約レコードを取得
         reservation_to_book = get_object_or_404(models.Reservation, id=reservation_id)
-        # ログインしているユーザーを取得
         user_instance = self.request.user
-        # 予約レコードの更新
-        reservation_to_book.is_booked = True  # 予約済みにする
-        reservation_to_book.customer = user_instance  # 予約ユーザー
-        reservation_to_book.number_of_people = self.request.POST.get(
-            "number_of_people"
-        )  # 予約人数
-        # 予約メニュー
-        menu_id = self.request.POST.get("menu")  # 予約メニュー
+        reservation_to_book.is_booked = True
+        reservation_to_book.customer = user_instance
+        reservation_to_book.number_of_people = self.request.POST.get("number_of_people")
+        menu_id = self.request.POST.get("menu")
         reservation_to_book.menu = models.Menu.objects.filter(id=menu_id).first()
         reservation_to_book.save()
 
-        # 予約の終了時間を計算
         end_time = (
-            datetime.combine(datetime.today(), reservation_to_book.time_start)
-            + timedelta(minutes=reservation_to_book.duration_min)
+            datetime.combine(datetime.today(), reservation_to_book.time_start) +
+            timedelta(minutes=reservation_to_book.duration_min)
         ).time()
 
-        # 依存スロット（予約終了時間よりも手前のスロット）を取得
         dependent_reservations = models.Reservation.objects.filter(
             dining_table=reservation_to_book.dining_table,
             is_booked=False,
             is_dependent=False,
             date=reservation_to_book.date,
-            time_start__gt=reservation_to_book.time_start,  # 現在の予約の開始時間以降
-            time_start__lt=end_time,  # 終了時間よりも早い
+            time_start__gt=reservation_to_book.time_start,
+            time_start__lt=end_time,
         )
 
-        # 取得した予約に対して、is_booked=True and is_dependent=Trueを設定
         for dep_reservation in dependent_reservations:
             dep_reservation.is_booked = True
             dep_reservation.is_dependent = True
@@ -457,7 +472,6 @@ class ReservationCreateView(SubscriptionRequiredMixin, generic.CreateView):
             dep_reservation.save()
 
         messages.success(self.request, "予約が完了しました。")
-
         return redirect(self.success_url)
 
 
@@ -606,6 +620,13 @@ class ReviewCreateView(SubscriptionRequiredMixin, generic.CreateView):
         review = form.save(commit=False)
         review.restaurant = restaurant_instance
         review.customer = user_instance
+        
+        # バリデーション: 訪問日が本日またはそれ以前の日付であることを確認
+        visit_date = form.cleaned_data.get("visit_date")
+        if visit_date > timezone.now().date():
+            form.add_error('visit_date', '訪問日は本日またはそれ以前の日付を選択してください。')
+            return self.form_invalid(form)
+        
         review.save()
 
         # Update the restaurant's rate field
@@ -661,6 +682,12 @@ class ReviewUpdateView(SubscriptionRequiredMixin, generic.UpdateView):
         return reverse_lazy("review_list", kwargs={"pk": restaurant_id})
 
     def form_valid(self, form):
+        # バリデーション: 訪問日が本日またはそれ以前の日付であることを確認
+        visit_date = form.cleaned_data.get("visit_date")
+        if visit_date > timezone.now().date():
+            form.add_error('visit_date', '訪問日は本日またはそれ以前の日付を選択してください。')
+            return self.form_invalid(form)
+
         response = super().form_valid(form)
         restaurant = get_object_or_404(
             models.Restaurant, id=form.instance.restaurant.id

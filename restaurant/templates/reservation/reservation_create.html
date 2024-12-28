@@ -10,8 +10,6 @@
   <div class="container nagoyameshi-container pb-5">
     <div class="row justify-content-center">
       <div class="col-xxl-8 col-xl-8 col-lg-8 col-md-8">
-        {% comment %} <div class="col-xxl-12 col-xl-12 col-lg-12 col-md-12"> {% endcomment %}
-          {% comment %} <div class="col-xxl-6 col-xl-7 col-lg-8 col-md-10"> {% endcomment %}
         <nav class="my-3" style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
           <ol class="breadcrumb mb-0">
             <li class="breadcrumb-item"><a href="{% url 'top_page' %}">ホーム</a></li>
@@ -21,7 +19,8 @@
           </ol>
         </nav>
         <h1 class="mb-2 text-center">{{ restaurant.shop_name }}</h1>
-        <p class="text-center"><span class="star-rating me-1" data-rate="{{ restaurant.rate|rate_star }}"></span>
+        <p class="text-center">
+          <span class="star-rating me-1" data-rate="{{ restaurant.rate|rate_star }}"></span>
           {{ restaurant.rate|floatformat:2 }} （{{ restaurant.review_num }}件）
         </p>
         <ul class="nav nav-tabs mb-3">
@@ -30,27 +29,19 @@
           </li>
           <li class="nav-item">
             <a class="nav-link active custom-bg" aria-current="page" href="{% url 'reservation_create' restaurant.id %}">予約</a>
-            {% comment %} <a class="nav-link active bg-primary text-white" aria-current="page" href="{% url 'reservation_create' restaurant.id %}">予約</a> {% endcomment %}
           </li>
           <li class="nav-item">
-            <a class="nav-link link-dark"
-            {# TODO:1#}
-            href="{% url 'review_list' restaurant.id %}">レビュー</a>
-            {% comment %} href="#">レビュー</a> {% endcomment %}
-            {# href="{% url 'review_list' restaurant.id %}">レビュー</a>#}
+            <a class="nav-link link-dark" href="{% url 'review_list' restaurant.id %}">レビュー</a>
           </li>
         </ul>
 
-        {% comment %} ここからオリジナル対応 {% endcomment %}
-        {% comment %} <div class="card-header">ご予約条件</div> {% endcomment %}
         <h3>ご予約条件</h3>
         <div class="card-body">
           <form method="GET" class="w-100">
             <div class="form-group row mb-3">
               <label for="date" class="col-md-5 col-form-label text-md-left fw-bold">予約日</label>
               <div class="col-md-7">
-                <input type="date" name="date" id="date" class="form-control" min="{{ tomorrow }}" required
-                value="{% if request.GET.date %}{{ request.GET.date }}{% else %}{{ tomorrow }}{% endif %}">
+                <input type="date" name="date" id="date" class="form-control" min="{{ tomorrow }}" required value="{% if request.GET.date %}{{ request.GET.date }}{% else %}{{ tomorrow }}{% endif %}">
               </div>
             </div>
             <div class="form-group row mb-3">
@@ -59,21 +50,19 @@
                 <select name="time" id="time" class="form-control" required>
                   <option value="{{ default_time }}" selected>{{ default_time }}</option>
                   {% for hour in hours %}
-                      <option value="{{ hour }}:00" {% if default_time == hour|stringformat:"02d"|add:":00" %}selected{% endif %}>{{ hour }}:00</option>
-                      <option value="{{ hour }}:30" {% if default_time == hour|stringformat:"02d"|add:":30" %}selected{% endif %}>{{ hour }}:30</option>
+                    <option value="{{ hour }}:00" {% if default_time == hour|stringformat:"02d"|add:":00" %}selected{% endif %}>{{ hour }}:00</option>
+                    <option value="{{ hour }}:30" {% if default_time == hour|stringformat:"02d"|add:":30" %}selected{% endif %}>{{ hour }}:30</option>
                   {% endfor %}
-              </select>
+                </select>
               </div>
             </div>
             <div class="form-group row mb-3">
               <label for="number_of_people" class="col-md-5 col-form-label text-md-left fw-bold">予約人数</label>
               <div class="col-md-7">
                 <select name="number_of_people" id="number_of_people" class="form-control" required>
-                {% for i in people_range %}
-                <option value="{{ i }}" {% if request.GET.number_of_people == i|stringformat:"s" %}selected{% elif not request.GET.number_of_people and i == 2 %}selected{% endif %}>
-                  {{ i }}人
-                </option>
-                {% endfor %}
+                  {% for i in people_range %}
+                    <option value="{{ i }}" {% if request.GET.number_of_people == i|stringformat:"s" %}selected{% elif not request.GET.number_of_people and i == 2 %}selected{% endif %}>{{ i }}人</option>
+                  {% endfor %}
                 </select>
               </div>
             </div>
@@ -82,110 +71,136 @@
             </div>
           </form>
 
+          {% if reservation_date and reservation_time and number_of_people %}
           <!-- 空き座席のテーブル -->
           <hr class="my-2">
           <h3>空き検索の結果</h3>
 
           <p>予約日：{{ reservation_date }}　時間：{{ reservation_time }}　予約人数：{{ number_of_people }}</p>
-          
+
           {% if available_slots %}
-          <p>{{ available_slots.count }}席の空きがあります。</p>
-          
+          <p>{{ available_slots|length }}席の空きがあります。</p>
+
           <h3>Step 1. 席を選択してください</h3>
-          
-          <form method="POST" action="{% url 'reservation_create' pk=restaurant.id %}">
-              {% csrf_token %}
-              <table  class="table" style="width: 100%;">
-                <tr>
-                  <th class="col-table-type">座席タイプ</th>
-                  <th class="col-table-people">最少人数</th>
-                  <th class="col-table-people">最大人数</th>
-                  <th class="col-table-duration">滞在時間</th>
-                  <th class="col-table-select">選択</th>
-                </tr>
-                {% for slot in available_slots %}
-                <tr>
-                  <td class="col-table-type">{{ slot.dining_table.name_for_customer }}</td>
-                  <td class="col-table-people">{{ slot.dining_table.min_people }}名</td>
-                  <td class="col-table-people">{{ slot.dining_table.max_people }}名</td>
-                  <td class="col-table-duration">{{ slot.duration_min }}分</td>
-                  <td class="col-table-select">
-                    <input type="radio" name="reservation_id" value="{{ slot.id }}" id="slot_{{ slot.id }}" {% if forloop.first %}checked{% endif %}>
-                    <label for="slot_{{ slot.id }}">選択</label>
-                  </td>
-                </tr>
-                {% endfor %}
-              </table>
-              <br>
-          
-              <!-- メニューのテーブル -->
-              <h3>Step 2. お食事も選択できます</h3>
-              <table class="table" style="width: 100%;">
-                <tr>
-                  <th class="col-menu-name">メニュー名</th>
-                  <th class="col-menu-description">内容</th>
-                  <th class="col-menu-photo">写真</th>
-                  <th class="col-menu-price">価格</th>
-                  <th class="col-menu-select">選択</th>
-                </tr>
-                {% for menu in menus %}
-                <tr>
-                  <td class="col-menu-name">{{ menu.name }}</td>
-                  <td class="col-menu-description">{{ menu.description }}</td>
-                  <td class="col-menu-photo">
-                    {% if menu.photo %}
-                        <img src="{{ menu.photo.url }}" alt="Menu Photo" style="width: 100px; height: auto;">
-                        <br>
-                        <a href="{{ menu.photo.url }}" target="_blank">写真へのリンク
-                        </a>
-                    {% else %}
-                    {% endif %}
-                  </td>
-                  <td class="col-menu-price">
-                    {% if menu.price %}{{ menu.price }}円{% endif %}
-                  </td>
-                  <td class="col-menu-select">
-                    <input type="radio" name="menu" value="{{ menu.id }}" id="menu_{{ menu.id }}">
-                    <label for="menu_{{ menu.id }}">選択</label>
-                  </td>
-                </tr>
-                {% endfor %}
-              </table>
 
-              <div class="form-group mb-4" style="text-align: center;">
+          <form method="POST" action="{% url 'reservation_create' pk=restaurant.id %}" onsubmit="return validateForm()">
+            {% csrf_token %}
+            <table class="table" style="width: 100%;">
+              <tr>
+                <th class="col-table-type">座席タイプ</th>
+                <th class="col-table-people">最少人数</th>
+                <th class="col-table-people">最大人数</th>
+                <th class="col-table-duration">滞在時間</th>
+                <th class="col-table-select">選択</th>
+              </tr>
+              {% for slot in available_slots %}
+              <tr>
+                <td class="col-table-type">{{ slot.dining_table.name_for_customer }}</td>
+                <td class="col-table-people">{{ slot.dining_table.min_people }}名</td>
+                <td class="col-table-people">{{ slot.dining_table.max_people }}名</td>
+                <td class="col-table-duration">{{ slot.duration_min }}分</td>
+                <td class="col-table-select">
+                  <input type="radio" name="reservation_id" value="{{ slot.id }}" id="slot_{{ slot.id }}" {% if forloop.first %}checked{% endif %}>
+                  <label for="slot_{{ slot.id }}">選択</label>
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+
+            <!-- メニューのテーブル -->
+            {% if menus %}
+            <h3>Step 2. お食事も選択できます</h3>
+            <table class="table" style="width: 100%;">
+              <tr>
+                <th class="col-menu-name">メニュー名</th>
+                <th class="col-menu-description">内容</th>
+                <th class="col-menu-photo">写真</th>
+                <th class="col-menu-price">価格</th>
+                <th class="col-menu-select">選択</th>
+              </tr>
+              {% for menu in menus %}
+              <tr>
+                <td class="col-menu-name">{{ menu.name }}</td>
+                <td class="col-menu-description">{{ menu.description }}</td>
+                <td class="col-menu-photo">
+                  {% if menu.photo %}
+                    <img src="{{ menu.photo.url }}" alt="Menu Photo" style="width: 100px; height: auto;">
+                  {% endif %}
+                </td>
+                <td class="col-menu-price">
+                  {% if menu.price %}{{ menu.price }}円{% endif %}
+                </td>
+                <td class="col-menu-select">
+                  <input type="radio" name="menu" value="{{ menu.id }}" id="menu_{{ menu.id }}" {% if forloop.first %}checked{% endif %}>
+                  <label for="menu_{{ menu.id }}">選択</label>
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+            {% endif %}
+
+            <div class="form-group mb-4" style="text-align: center;">
               <!-- 人数の隠しフィールド -->
-                <input type="hidden" name="number_of_people" value="{{ number_of_people }}">
-                <br>
-                <button type="submit" class="btn btn-primary text-white shadow-sm">上記の内容で予約する</button>
-              </div>
-            </form>
-          
-      {% else %}
-          <p>予約可能な席はありません。</p>
-      {% endif %}
+              <input type="hidden" name="number_of_people" value="{{ number_of_people }}">
+              <br>
+              <button type="submit" class="btn btn-primary text-white shadow-sm">上記の内容で予約する</button>
+            </div>
+          </form>
 
-
-    </div>
-
+          {% else %}
+            {% if not all_slots_exist %}
+              <p>
+                ご指定の予約日に予約枠が設定されておりません。<br>
+                お手数ですが、詳細は店舗にお問い合わせください。</p>
+                <p>
+                  ご連絡先　【{{ restaurant.shop_name }}】<br>
+                  　電話：{{ restaurant.phone }}<br>
+                  　メール：{{ restaurant.email }}<br>
+              {% elif other_time_slots %}
+              <p>申し訳ありません。<br>
+                この時間は{{ number_of_people }}名様用のお席が満席か、営業時間外となっております。</p>
+              <p>以下の時間には空きがありますので、ご検討ください。</p>
+              <ul>
+                {% for time in other_time_slots %}
+                <li>{{ time|time:"H:i" }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p>申し訳ありません。この日は{{ number_of_people }}名様用のすべてのお席が満席です。</p>
+            {% endif %}
+          {% endif %}
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
 </main>
 {% endblock %}
+
 {% block js_script %}
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ja.js"></script>
 <script>
   const restaurantRegularHolidays = {{ close_day_list }};
-  flatpickr('#reservation_date', {
+  flatpickr('#date', {
     locale: 'ja',
     minDate: 'today',
     maxDate: new Date().fp_incr(60),
     disable: [
-    function (date) {
-      return restaurantRegularHolidays.includes(date.getDay());
-    }
+      function (date) {
+        return restaurantRegularHolidays.includes(date.getDay());
+      }
     ]
   });
+
+  function validateForm() {
+    // 席が選ばれているか確認
+    const reservationSelected = document.querySelector('input[name="reservation_id"]:checked');
+    if (!reservationSelected) {
+      alert("席をチェックしてください");
+      return false;  // フォーム送信を防ぐ
+    }
+    return true;  // フォーム送信を許可
+  }
 </script>
 {% endblock %}
